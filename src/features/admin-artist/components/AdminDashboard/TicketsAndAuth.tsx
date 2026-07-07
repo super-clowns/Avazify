@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import RejectionModal from '../../components/dashboard/RejectionModal';
-import TicketChatBox from '../../components/dashboard/TicketChatBox';
-import type { TicketData } from '../../components/dashboard/TicketChatBox';
+import RejectionModal from './RejectionModal';
+import TicketChatBox from './TicketChatBox';
+import type { TicketData } from './TicketChatBox';
 
 interface ArtistRequest {
   id: string;

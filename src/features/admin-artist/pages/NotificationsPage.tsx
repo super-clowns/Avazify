@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import NotificationCard from '../components/notifications/NotificationCard';
-import EmptyNotifications from '../components/notifications/EmptyNotifications';
-import type { NotificationItem } from '../components/notifications/NotificationCard';
+import NotificationCard from '../components/NotificationCard';
+import EmptyNotifications from '../components/EmptyNotifications';
+import type { NotificationItem } from '../components/NotificationCard';
 
 
 export default function Notifications() {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import RevenueWidget from '../../components/dashboard/RevenueWidget';
+import RevenueWidget from './RevenueWidget';
 
 export default function SubscriptionManagement() {
   const [silverPrice, setSilverPrice] = useState<number>(49000);

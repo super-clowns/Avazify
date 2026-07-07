@@ -1,14 +1,14 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-import ArtistProfile from './pages/ArtistProfile';
-import ArtistConsole from './pages/ArtistConsole';
-import Notifications from './pages/Notifications';
+import ArtistProfile from './features/admin-artist/pages/ArtistProfilePage';
+import ArtistConsole from './features/admin-artist/pages/ArtistManagementPage';
+import Notifications from './features/admin-artist/pages/NotificationsPage';
 
-import DashboardLayout from './pages/Dashboard/DashboardLayout';
-import TicketsAndAuth from './pages/Dashboard/TicketsAndAuth';
-import Auditing from './pages/Dashboard/Auditing';
-import SubscriptionManagement from './pages/Dashboard/SubscriptionManagement';
+import DashboardLayout from './features/admin-artist/pages/DashboardPage';
+import TicketsAndAuth from './features/admin-artist/components/AdminDashboard/TicketsAndAuth';
+import Auditing from './features/admin-artist/components/AdminDashboard/AuditTable';
+import SubscriptionManagement from './features/admin-artist/components/AdminDashboard/PriceControlForm';
 
 export default function App() {
   return (

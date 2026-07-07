@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import TicketsAndAuth from './TicketsAndAuth';
-import Auditing from './Auditing';
-import SubscriptionManagement from './SubscriptionManagement';
+import TicketsAndAuth from '../components/AdminDashboard/TicketsAndAuth';
+import Auditing from '../components/AdminDashboard/AuditTable';
+import SubscriptionManagement from '../components/AdminDashboard/PriceControlForm';
 
 type Role = 'support' | 'admin';
 type SubSection = 'tickets' | 'auditing' | 'subscriptions';

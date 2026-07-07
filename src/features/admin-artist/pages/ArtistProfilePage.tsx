@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import VerifiedBadge from '../components/shared/VerifiedBadge';
+import VerifiedBadge from '../../../components/VerifiedBadge';
 
 interface Track {
   id: string;
