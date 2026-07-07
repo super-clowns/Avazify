@@ -10,7 +10,7 @@ export default function Notifications() {
     { id: '2', message: 'درخواست احراز هویت هنرمند «آرش» در انتظار بررسی شماست.', isRead: false, type: 'admin' },
     { id: '3', message: 'حساب هنری شما با موفقیت توسط پشتیبان تایید شد.', isRead: true, type: 'artist' },
   ]);
-
+ 
   const handleMarkAllAsRead = () => {
     setNotifications(notifications.map(n => ({ ...n, isRead: true })));
   };
