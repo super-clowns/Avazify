@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import VerifiedBadge from '../../../components/VerifiedBadge';
 
 interface Track {

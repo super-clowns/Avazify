@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import RejectionModal from './RejectionModal';
 import TicketChatBox from './TicketChatBox';
 import type { TicketData } from './TicketChatBox';

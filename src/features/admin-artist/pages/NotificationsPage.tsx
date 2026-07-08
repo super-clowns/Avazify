@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import NotificationCard from '../components/NotificationCard';
 import EmptyNotifications from '../components/EmptyNotifications';
 import type { NotificationItem } from '../components/NotificationCard';

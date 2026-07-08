@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import TicketsAndAuth from '../components/AdminDashboard/TicketsAndAuth';
 import Auditing from '../components/AdminDashboard/AuditTable';
 import SubscriptionManagement from '../components/AdminDashboard/PriceControlForm';
