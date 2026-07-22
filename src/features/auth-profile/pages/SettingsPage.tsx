@@ -1,7 +1,17 @@
-import { useState } from 'react';
-
 import Button from '../../../components/Button';
+
 import PhasePlaceholder from '../components/PhasePlaceholder';
+
+import { useAuth } from '../hooks/useAuth';
+
+import type {
+  NotificationPreferences,
+} from '../types';
+
+import {
+  getRoleLabel,
+  getSubscriptionLabel,
+} from '../utils/userPresentation';
 
 interface SettingToggleProps {
   label: string;
@@ -41,35 +51,88 @@ function SettingToggle({
   );
 }
 
-// Application settings foundation.
+// Application settings from central state.
 export default function SettingsPage() {
-  const [
-    newReleaseNotifications,
-    setNewReleaseNotifications,
-  ] = useState(true);
+  const {
+    currentUser,
+    updateSettings,
+  } = useAuth();
 
-  const [
-    subscriptionNotifications,
-    setSubscriptionNotifications,
-  ] = useState(true);
+  if (!currentUser) {
+    return (
+      <section className="profile-not-found">
+        <h1>
+          حساب فعالی وجود ندارد
+        </h1>
 
-  const [
-    soundEffects,
-    setSoundEffects,
-  ] = useState(false);
+        <p>
+          برای مدیریت تنظیمات، یک حساب
+          آزمایشی انتخاب کنید.
+        </p>
+      </section>
+    );
+  }
+
+  const updateNotification = (
+    key: keyof NotificationPreferences,
+    value: boolean,
+  ) => {
+    updateSettings({
+      notifications: {
+        ...currentUser.settings
+          .notifications,
+
+        [key]: value,
+      },
+    });
+  };
+
+  const showListenerNotifications =
+    currentUser.role === 'listener' ||
+    currentUser.role === 'artist';
+
+  const showArtistNotifications =
+    currentUser.role === 'artist';
+
+  const showStaffNotifications =
+    currentUser.role === 'support' ||
+    currentUser.role === 'admin';
 
   return (
     <PhasePlaceholder
-      eyebrow="User Module / Settings"
+      eyebrow="User Module / User Settings State"
       title="تنظیمات برنامه"
-      description="چیدمان تنظیمات اعلانات، صدا، زبان، اشتراک و حذف حساب آماده است. ذخیره دائمی تنظیمات در فاز Local Storage انجام می‌شود."
+      description="تنظیمات اکنون بخشی از مدل User هستند و تغییر آن‌ها در تمام کامپوننت‌های متصل به AuthContext به‌صورت هم‌زمان اعمال می‌شود."
       items={[
-        'تفکیک تنظیمات عمومی، اعلانات و حساب کاربری',
-        'کنترل‌های قابل تعامل برای پیش‌نمایش رابط کاربری',
-        'نمایش اشتراک فعلی و مسیر ارتقای آینده',
-        'بخش خطر برای حذف حساب با قابلیت اتصال به پنجره تأیید',
+        'مدل یکپارچه UserSettings و NotificationPreferences',
+        'نمایش گزینه‌های اعلان متناسب با نقش حساب فعال',
+        'به‌روزرسانی تنظیمات در حافظه مرکزی بدون داده ثابت صفحه',
+        'آماده‌سازی کامل برای ذخیره در Local Storage در فاز مربوطه',
       ]}
     >
+      <div className="user-state-strip">
+        <div>
+          <strong>
+            {currentUser.displayName}
+          </strong>
+
+          <span>
+            {getRoleLabel(
+              currentUser.role,
+            )}{' '}
+            ·{' '}
+            {getSubscriptionLabel(
+              currentUser.subscription
+                .tier,
+            )}
+          </span>
+        </div>
+
+        <code>
+          {currentUser.settings.language}
+        </code>
+      </div>
+
       <div className="settings-grid">
         <section className="content-card settings-card">
           <div className="content-card-heading">
@@ -82,31 +145,125 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <SettingToggle
-            label="انتشار آثار جدید"
-            description="انتشار آثار هنرمندانی که دنبال می‌کنید به شما اطلاع داده شود."
-            checked={
-              newReleaseNotifications
-            }
-            onChange={() =>
-              setNewReleaseNotifications(
-                (current) => !current,
-              )
-            }
-          />
+          {showListenerNotifications ? (
+            <>
+              <SettingToggle
+                label="انتشار آثار جدید"
+                description="انتشار آثار هنرمندانی که دنبال می‌کنید به شما اطلاع داده شود."
+                checked={
+                  currentUser.settings
+                    .notifications
+                    .newReleases
+                }
+                onChange={() =>
+                  updateNotification(
+                    'newReleases',
+                    !currentUser.settings
+                      .notifications
+                      .newReleases,
+                  )
+                }
+              />
 
-          <SettingToggle
-            label="هشدار اشتراک"
-            description="پیش از پایان اعتبار اشتراک، اعلان دریافت کنید."
-            checked={
-              subscriptionNotifications
-            }
-            onChange={() =>
-              setSubscriptionNotifications(
-                (current) => !current,
-              )
-            }
-          />
+              <SettingToggle
+                label="هشدار اشتراک"
+                description="پیش از پایان اعتبار اشتراک، اعلان دریافت کنید."
+                checked={
+                  currentUser.settings
+                    .notifications
+                    .subscriptionExpiry
+                }
+                onChange={() =>
+                  updateNotification(
+                    'subscriptionExpiry',
+                    !currentUser.settings
+                      .notifications
+                      .subscriptionExpiry,
+                  )
+                }
+              />
+            </>
+          ) : null}
+
+          {showArtistNotifications ? (
+            <>
+              <SettingToggle
+                label="نتیجه احراز هویت هنرمند"
+                description="نتیجه تأیید یا رد درخواست هنرمندی برای شما ارسال شود."
+                checked={
+                  currentUser.settings
+                    .notifications
+                    .artistVerification
+                }
+                onChange={() =>
+                  updateNotification(
+                    'artistVerification',
+                    !currentUser.settings
+                      .notifications
+                      .artistVerification,
+                  )
+                }
+              />
+
+              <SettingToggle
+                label="گزارش مالی ماهانه"
+                description="پس از محاسبه درآمد ماهانه، اعلان دریافت کنید."
+                checked={
+                  currentUser.settings
+                    .notifications
+                    .financialReports
+                }
+                onChange={() =>
+                  updateNotification(
+                    'financialReports',
+                    !currentUser.settings
+                      .notifications
+                      .financialReports,
+                  )
+                }
+              />
+            </>
+          ) : null}
+
+          {showStaffNotifications ? (
+            <>
+              <SettingToggle
+                label="تیکت‌های جدید"
+                description="ثبت تیکت جدید کاربران به شما اطلاع داده شود."
+                checked={
+                  currentUser.settings
+                    .notifications
+                    .supportTickets
+                }
+                onChange={() =>
+                  updateNotification(
+                    'supportTickets',
+                    !currentUser.settings
+                      .notifications
+                      .supportTickets,
+                  )
+                }
+              />
+
+              <SettingToggle
+                label="درخواست تأیید هنرمند"
+                description="ثبت درخواست احراز هویت جدید به شما اطلاع داده شود."
+                checked={
+                  currentUser.settings
+                    .notifications
+                    .artistVerification
+                }
+                onChange={() =>
+                  updateNotification(
+                    'artistVerification',
+                    !currentUser.settings
+                      .notifications
+                      .artistVerification,
+                  )
+                }
+              />
+            </>
+          ) : null}
         </section>
 
         <section className="content-card settings-card">
@@ -116,18 +273,25 @@ export default function SettingsPage() {
                 Application
               </p>
 
-              <h2>تنظیمات عمومی</h2>
+              <h2>
+                تنظیمات عمومی
+              </h2>
             </div>
           </div>
 
           <SettingToggle
             label="افکت‌های صوتی برنامه"
             description="صدای تعامل با کنترل‌های برنامه فعال باشد."
-            checked={soundEffects}
+            checked={
+              currentUser.settings
+                .soundEnabled
+            }
             onChange={() =>
-              setSoundEffects(
-                (current) => !current,
-              )
+              updateSettings({
+                soundEnabled:
+                  !currentUser.settings
+                    .soundEnabled,
+              })
             }
           />
 
@@ -136,17 +300,31 @@ export default function SettingsPage() {
             htmlFor="language"
           >
             <div>
-              <strong>زبان برنامه</strong>
+              <strong>
+                زبان برنامه
+              </strong>
 
               <p>
-                زبان رابط کاربری را
-                انتخاب کنید.
+                زبان ترجیحی رابط کاربری
+                را انتخاب کنید.
               </p>
             </div>
 
             <select
               id="language"
-              defaultValue="fa"
+              value={
+                currentUser.settings
+                  .language
+              }
+              onChange={(event) =>
+                updateSettings({
+                  language:
+                    event.target.value ===
+                    'en'
+                      ? 'en'
+                      : 'fa',
+                })
+              }
             >
               <option value="fa">
                 فارسی
@@ -176,15 +354,23 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <strong>اشتراک پایه</strong>
+              <strong>
+                {getSubscriptionLabel(
+                  currentUser
+                    .subscription
+                    .tier,
+                )}
+              </strong>
 
               <p>
-                پلن رایگان با محدودیت
-                ۶۰ استریم روزانه
+                سطح اشتراک از مدل مرکزی
+                حساب فعال دریافت می‌شود.
               </p>
             </div>
 
-            <span className="subscription-pill subscription-pill-free">
+            <span
+              className={`subscription-pill subscription-pill-${currentUser.subscription.tier}`}
+            >
               فعال
             </span>
           </div>
@@ -208,9 +394,10 @@ export default function SettingsPage() {
           </div>
 
           <p>
-            پس از اتصال به بک‌اند، این
-            عملیات با تأیید دوباره و کنترل
-            امنیتی انجام خواهد شد.
+            حذف واقعی حساب در این فاز
+            انجام نمی‌شود و بعداً به
+            پنجره تأیید و Backend متصل
+            خواهد شد.
           </p>
 
           <Button variant="danger">

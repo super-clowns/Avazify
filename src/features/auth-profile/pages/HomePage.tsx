@@ -1,12 +1,22 @@
 import { Link } from 'react-router-dom';
 
 import Button from '../../../components/Button';
+
 import { APP_PATHS } from '../../../config/paths';
+
 import {
   mockAlbums,
   mockFeaturedTracks,
 } from '../../../services/mockData';
+
 import PhasePlaceholder from '../components/PhasePlaceholder';
+
+import { useAuth } from '../hooks/useAuth';
+
+import {
+  getRoleLabel,
+  getSubscriptionLabel,
+} from '../utils/userPresentation';
 
 const recentPlaylists = [
   {
@@ -29,25 +39,51 @@ const recentPlaylists = [
   },
 ];
 
-// User home page foundation.
+// User home page with central state.
 export default function HomePage() {
+  const { currentUser } = useAuth();
+
+  if (!currentUser) {
+    return (
+      <section className="profile-not-found">
+        <h1>
+          حساب فعالی وجود ندارد
+        </h1>
+
+        <p>
+          برای نمایش صفحه خانه، یک حساب
+          آزمایشی انتخاب کنید.
+        </p>
+      </section>
+    );
+  }
+
+  const isGoldUser =
+    currentUser.subscription.tier ===
+    'gold';
+
+  const subscriptionClass =
+    `subscription-pill-${currentUser.subscription.tier}`;
+
   return (
     <PhasePlaceholder
-      eyebrow="User Module / Home"
-      title="سلام، کاربر نمونه"
-      description="ساختار صفحه خانه، ویترین موسیقی و دسترسی‌های اصلی برای اتصال به داده‌های کاربر آماده است."
+      eyebrow="User Module / Central State"
+      title={`سلام، ${currentUser.displayName}`}
+      description="صفحه خانه اکنون اطلاعات نقش، اشتراک و نمایه را از AuthContext مرکزی دریافت می‌کند و با تغییر حساب آزمایشی بلافاصله به‌روزرسانی می‌شود."
       items={[
-        'هدر کاربر با تصویر پیش‌فرض و نوع اشتراک',
-        'ویترین پلی‌لیست‌های اخیر، آلبوم‌های جدید و آهنگ‌های پرشنونده',
-        'بخش نمایشی دسترسی زودهنگام کاربران طلایی',
-        'اتصال صفحه به ناوبری اصلی و مسیرهای موسیقی',
+        'مدل یکپارچه User برای هر چهار نقش سامانه',
+        'وضعیت مرکزی کاربر فعال با React Context و useReducer',
+        'نمایش شرطی امکانات بر اساس نقش و سطح اشتراک',
+        'پنج حساب آزمایشی برای بررسی حالت‌های مختلف رابط کاربری',
       ]}
       actions={
         <Button
           variant="secondary"
           onClick={() =>
             window.scrollTo({
-              top: document.body.scrollHeight,
+              top:
+                document.body
+                  .scrollHeight,
               behavior: 'smooth',
             })
           }
@@ -56,21 +92,48 @@ export default function HomePage() {
         </Button>
       }
     >
+      <div className="user-state-strip">
+        <div>
+          <strong>
+            وضعیت فعال از Context مرکزی
+          </strong>
+
+          <span>
+            {getRoleLabel(
+              currentUser.role,
+            )}{' '}
+            ·{' '}
+            {getSubscriptionLabel(
+              currentUser.subscription
+                .tier,
+            )}
+          </span>
+        </div>
+
+        <code>
+          {currentUser.id}
+        </code>
+      </div>
+
       <section className="home-hero-card">
         <div>
-          <span className="subscription-pill subscription-pill-free">
-            اشتراک پایه
+          <span
+            className={`subscription-pill ${subscriptionClass}`}
+          >
+            {getSubscriptionLabel(
+              currentUser.subscription
+                .tier,
+            )}
           </span>
 
           <h2>
-            موسیقی مناسب لحظه‌ات را پیدا
-            کن.
+            موسیقی مناسب لحظه‌ات را
+            پیدا کن.
           </h2>
 
           <p>
-            به آرشیو برو، یک آهنگ انتخاب
-            کن و از پخش‌کننده مشترک پروژه
-            استفاده کن.
+            {currentUser.bio ||
+              'به آرشیو برو، یک آهنگ انتخاب کن و از پخش‌کننده مشترک پروژه استفاده کن.'}
           </p>
 
           <div className="home-hero-actions">
@@ -83,7 +146,9 @@ export default function HomePage() {
 
             <Link
               className="ui-button ui-button-ghost ui-button-medium"
-              to={APP_PATHS.playlists}
+              to={
+                APP_PATHS.playlists
+              }
             >
               پلی‌لیست‌های من
             </Link>
@@ -113,7 +178,9 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <Link to={APP_PATHS.playlists}>
+          <Link
+            to={APP_PATHS.playlists}
+          >
             مشاهده همه
           </Link>
         </div>
@@ -135,7 +202,8 @@ export default function HomePage() {
                   </strong>
 
                   <span>
-                    {playlist.tracks} آهنگ
+                    {playlist.tracks}{' '}
+                    آهنگ
                   </span>
                 </div>
               </article>
@@ -152,11 +220,14 @@ export default function HomePage() {
             </p>
 
             <h2>
-              آخرین آلبوم‌های منتشرشده
+              آخرین آلبوم‌های
+              منتشرشده
             </h2>
           </div>
 
-          <Link to={APP_PATHS.archive}>
+          <Link
+            to={APP_PATHS.archive}
+          >
             ورود به آرشیو
           </Link>
         </div>
@@ -164,29 +235,38 @@ export default function HomePage() {
         <div className="media-card-grid">
           {mockAlbums
             .slice(0, 4)
-            .map((album, index) => (
-              <Link
-                className="media-card"
-                key={album.id}
-                to={APP_PATHS.album(
-                  album.id,
-                )}
-              >
-                <div
-                  className={`media-card-cover media-cover-${
-                    (index % 4) + 1
-                  }`}
+            .map(
+              (
+                album,
+                index,
+              ) => (
+                <Link
+                  className="media-card"
+                  key={album.id}
+                  to={APP_PATHS.album(
+                    album.id,
+                  )}
                 >
-                  <span>♫</span>
-                </div>
+                  <div
+                    className={`media-card-cover media-cover-${
+                      (index %
+                        4) +
+                      1
+                    }`}
+                  >
+                    <span>♫</span>
+                  </div>
 
-                <strong>
-                  {album.title}
-                </strong>
+                  <strong>
+                    {album.title}
+                  </strong>
 
-                <span>{album.artist}</span>
-              </Link>
-            ))}
+                  <span>
+                    {album.artist}
+                  </span>
+                </Link>
+              ),
+            )}
         </div>
       </section>
 
@@ -206,64 +286,72 @@ export default function HomePage() {
         <div className="compact-track-list">
           {mockFeaturedTracks
             .slice(0, 4)
-            .map((track, index) => (
-              <div
-                className="compact-track-row"
-                key={track.id}
-              >
-                <span className="compact-track-index">
-                  {index + 1}
-                </span>
+            .map(
+              (
+                track,
+                index,
+              ) => (
+                <div
+                  className="compact-track-row"
+                  key={track.id}
+                >
+                  <span className="compact-track-index">
+                    {index + 1}
+                  </span>
 
-                <div className="compact-track-cover">
-                  ♪
-                </div>
+                  <div className="compact-track-cover">
+                    ♪
+                  </div>
 
-                <div className="compact-track-copy">
-                  <strong>
-                    {track.title}
-                  </strong>
+                  <div className="compact-track-copy">
+                    <strong>
+                      {track.title}
+                    </strong>
 
-                  <span>
-                    {track.artist}
+                    <span>
+                      {track.artist}
+                    </span>
+                  </div>
+
+                  <span className="compact-track-stat">
+                    {track.listeners.toLocaleString(
+                      'fa-IR',
+                    )}{' '}
+                    شنونده
                   </span>
                 </div>
-
-                <span className="compact-track-stat">
-                  {track.listeners.toLocaleString(
-                    'fa-IR',
-                  )}{' '}
-                  شنونده
-                </span>
-              </div>
-            ))}
+              ),
+            )}
         </div>
       </section>
 
-      <section className="early-access-card">
-        <span className="subscription-pill subscription-pill-gold">
-          ویژه اشتراک طلایی
-        </span>
+      {isGoldUser ? (
+        <section className="early-access-card">
+          <span className="subscription-pill subscription-pill-gold">
+            ویژه اشتراک طلایی
+          </span>
 
-        <div>
-          <h2>
-            دسترسی زودهنگام به آثار جدید
-          </h2>
+          <div>
+            <h2>
+              دسترسی زودهنگام به آثار
+              جدید
+            </h2>
 
-          <p>
-            جایگاه این بخش آماده است و
-            نمایش شرطی آن در فاز وضعیت
-            کاربر تکمیل می‌شود.
-          </p>
-        </div>
+            <p>
+              این بخش فقط زمانی نمایش
+              داده می‌شود که حساب فعال
+              دارای اشتراک طلایی باشد.
+            </p>
+          </div>
 
-        <span
-          className="early-access-icon"
-          aria-hidden="true"
-        >
-          ★
-        </span>
-      </section>
+          <span
+            className="early-access-icon"
+            aria-hidden="true"
+          >
+            ★
+          </span>
+        </section>
+      ) : null}
     </PhasePlaceholder>
   );
 }

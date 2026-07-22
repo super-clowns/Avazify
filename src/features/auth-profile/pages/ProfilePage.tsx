@@ -1,33 +1,96 @@
 import { useParams } from 'react-router-dom';
 
 import Button from '../../../components/Button';
+
 import PhasePlaceholder from '../components/PhasePlaceholder';
 
-// User profile page foundation.
+import { useAuth } from '../hooks/useAuth';
+
+import {
+  getAvatarInitial,
+  getDailyStreamLimit,
+  getGenderLabel,
+  getPlaylistLimit,
+  getRoleLabel,
+  getSubscriptionLabel,
+} from '../utils/userPresentation';
+
+function formatDate(
+  value: string | null,
+) {
+  if (!value) {
+    return 'ثبت نشده';
+  }
+
+  return new Intl.DateTimeFormat(
+    'fa-IR',
+    {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    },
+  ).format(new Date(value));
+}
+
+// User profile page with mock data.
 export default function ProfilePage() {
   const { username } = useParams<{
     username: string;
   }>();
 
-  const displayedUsername =
-    username ?? 'sample_listener';
+  const {
+    currentUser,
+    getUserByUsername,
+  } = useAuth();
 
-  const isOwnProfile = !username;
+  const profileUser = username
+    ? getUserByUsername(username)
+    : currentUser ?? undefined;
+
+  if (!profileUser) {
+    return (
+      <section className="profile-not-found">
+        <h1>کاربر پیدا نشد</h1>
+
+        <p>
+          نام کاربری واردشده در داده‌های
+          آزمایشی فاز دوم وجود ندارد.
+        </p>
+      </section>
+    );
+  }
+
+  const isOwnProfile =
+    currentUser?.id ===
+    profileUser.id;
+
+  const playlistLimit =
+    getPlaylistLimit(
+      profileUser.subscription.tier,
+    );
+
+  const dailyStreamLimit =
+    getDailyStreamLimit(
+      profileUser.subscription.tier,
+    );
+
+  const subscriptionClass =
+    `subscription-pill-${profileUser.subscription.tier}`;
 
   return (
     <PhasePlaceholder
-      eyebrow="User Module / Profile"
+      eyebrow="User Module / Profile State"
       title={
         isOwnProfile
           ? 'نمایه کاربری من'
-          : `نمایه ${displayedUsername}`
+          : `نمایه ${profileUser.displayName}`
       }
-      description="ساختار نمایش اطلاعات شخصی، آمار و عملیات نمایه آماده شده است. منطق ویرایش و دنبال‌کردن در فازهای بعد متصل می‌شود."
+      description="تمام اطلاعات این صفحه از مدل User و داده‌های آزمایشی مرکزی خوانده می‌شوند؛ بنابراین مقدارهای ثابت فاز قبلی حذف شده‌اند."
       items={[
-        'مسیر مستقل برای نمایه شخصی و نمایه سایر کاربران',
-        'نمایش نام کاربری، نوع اشتراک و آمار استریم روزانه',
-        'جایگاه عملیات ویرایش، دنبال‌کردن و لغو دنبال‌کردن',
-        'طراحی واکنش‌گرا برای موبایل، تبلت و دسکتاپ',
+        'نمایش پروفایل کاربر فعال و کاربران دیگر با یک مدل مشترک',
+        'نمایش نقش، سطح اشتراک، آمار و تنظیمات واقعی داده آزمایشی',
+        'پشتیبانی از مسیر profile/:username با جستجو در Context',
+        'آماده‌سازی داده‌ها برای ویرایش پروفایل و Follow در فازهای بعد',
       ]}
       actions={
         <Button
@@ -43,55 +106,128 @@ export default function ProfilePage() {
         </Button>
       }
     >
+      <div className="user-state-strip">
+        <div>
+          <strong>
+            {getRoleLabel(
+              profileUser.role,
+            )}
+          </strong>
+
+          <span dir="ltr">
+            @{profileUser.username}
+          </span>
+        </div>
+
+        <code>
+          {profileUser.id}
+        </code>
+      </div>
+
       <section className="profile-card">
         <div className="profile-banner">
           <div className="profile-banner-shape profile-banner-shape-one" />
+
           <div className="profile-banner-shape profile-banner-shape-two" />
         </div>
 
         <div className="profile-main-row">
           <div className="avatar avatar-large">
-            ک
+            {getAvatarInitial(
+              profileUser,
+            )}
           </div>
 
           <div className="profile-identity">
             <div className="profile-name-row">
-              <h2>کاربر نمونه</h2>
+              <h2>
+                {profileUser.displayName}
+              </h2>
 
-              <span className="subscription-pill subscription-pill-free">
-                پایه
+              <span
+                className={`subscription-pill ${subscriptionClass}`}
+              >
+                {getSubscriptionLabel(
+                  profileUser
+                    .subscription
+                    .tier,
+                )}
               </span>
             </div>
 
             <p dir="ltr">
-              @{displayedUsername}
+              @{profileUser.username}
             </p>
 
             <span>
-              عضو آوازیفای از بهار ۱۴۰۵
+              عضو از{' '}
+              {formatDate(
+                profileUser.joinedAt,
+              )}
             </span>
           </div>
         </div>
 
         <div className="profile-stat-grid">
           <article>
-            <span>دنبال‌کننده</span>
-            <strong>۱۲۸</strong>
+            <span>
+              دنبال‌کننده
+            </span>
+
+            <strong>
+              {profileUser.stats.followers.toLocaleString(
+                'fa-IR',
+              )}
+            </strong>
           </article>
 
           <article>
-            <span>دنبال‌شونده</span>
-            <strong>۷۶</strong>
+            <span>
+              دنبال‌شونده
+            </span>
+
+            <strong>
+              {profileUser.stats.following.toLocaleString(
+                'fa-IR',
+              )}
+            </strong>
           </article>
 
           <article>
-            <span>استریم امروز</span>
-            <strong>۱۸ از ۶۰</strong>
+            <span>
+              استریم امروز
+            </span>
+
+            <strong>
+              {profileUser.stats.dailyStreams.toLocaleString(
+                'fa-IR',
+              )}
+
+              {dailyStreamLimit ===
+              null
+                ? ' · نامحدود'
+                : ` از ${dailyStreamLimit.toLocaleString(
+                    'fa-IR',
+                  )}`}
+            </strong>
           </article>
 
           <article>
-            <span>پلی‌لیست‌ها</span>
-            <strong>۳ از ۶</strong>
+            <span>
+              پلی‌لیست‌ها
+            </span>
+
+            <strong>
+              {profileUser.stats.playlistCount.toLocaleString(
+                'fa-IR',
+              )}
+
+              {playlistLimit === null
+                ? ' · نامحدود'
+                : ` از ${playlistLimit.toLocaleString(
+                    'fa-IR',
+                  )}`}
+            </strong>
           </article>
         </div>
       </section>
@@ -99,7 +235,9 @@ export default function ProfilePage() {
       <div className="profile-detail-grid">
         <section className="content-card">
           <div className="content-card-heading">
-            <h2>اطلاعات شخصی</h2>
+            <h2>
+              اطلاعات شخصی
+            </h2>
 
             {isOwnProfile ? (
               <button
@@ -113,28 +251,54 @@ export default function ProfilePage() {
 
           <dl className="profile-detail-list">
             <div>
-              <dt>نام نمایشی</dt>
-              <dd>کاربر نمونه</dd>
+              <dt>
+                نام نمایشی
+              </dt>
+
+              <dd>
+                {profileUser.displayName}
+              </dd>
             </div>
 
             <div>
               <dt>ایمیل</dt>
 
               <dd dir="ltr">
-                sample@avazify.local
+                {profileUser.email}
               </dd>
             </div>
 
             <div>
-              <dt>تاریخ تولد</dt>
-              <dd>۱۳۸۲/۰۵/۱۲</dd>
+              <dt>
+                تاریخ تولد
+              </dt>
+
+              <dd>
+                {formatDate(
+                  profileUser.birthDate,
+                )}
+              </dd>
             </div>
 
             <div>
               <dt>جنسیت</dt>
 
               <dd>
-                ترجیح می‌دهم نگویم
+                {getGenderLabel(
+                  profileUser.gender,
+                )}
+              </dd>
+            </div>
+
+            <div>
+              <dt>
+                نقش سامانه
+              </dt>
+
+              <dd>
+                {getRoleLabel(
+                  profileUser.role,
+                )}
               </dd>
             </div>
           </dl>
@@ -142,7 +306,9 @@ export default function ProfilePage() {
 
         <section className="content-card">
           <div className="content-card-heading">
-            <h2>وضعیت اشتراک</h2>
+            <h2>
+              وضعیت اشتراک
+            </h2>
           </div>
 
           <div className="subscription-summary">
@@ -151,11 +317,30 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <strong>اشتراک پایه</strong>
+              <strong>
+                {getSubscriptionLabel(
+                  profileUser
+                    .subscription
+                    .tier,
+                )}
+              </strong>
 
               <p>
-                ۶۰ استریم روزانه و حداکثر
-                ۶ پلی‌لیست
+                {dailyStreamLimit ===
+                null
+                  ? 'استریم روزانه نامحدود'
+                  : `${dailyStreamLimit.toLocaleString(
+                      'fa-IR',
+                    )} استریم روزانه`}
+
+                {' · '}
+
+                {playlistLimit ===
+                null
+                  ? 'پلی‌لیست نامحدود'
+                  : `حداکثر ${playlistLimit.toLocaleString(
+                      'fa-IR',
+                    )} پلی‌لیست`}
               </p>
             </div>
           </div>
