@@ -128,14 +128,6 @@ export default function Sidebar({
         )
       : [];
 
-  const artistProfilePath =
-    currentUser?.artistProfileId
-      ? APP_PATHS.artistById(
-          currentUser
-            .artistProfileId,
-        )
-      : null;
-
   const canManageArtistWorks =
     currentUser?.role ===
       'artist' &&
@@ -234,38 +226,6 @@ export default function Sidebar({
               </NavLink>
             ),
           )}
-
-          {artistProfilePath ? (
-            <>
-              <p className="sidebar-section-title sidebar-section-spaced">
-                فضای هنرمند
-              </p>
-
-              <NavLink
-                to={artistProfilePath}
-                className={({
-                  isActive,
-                }) =>
-                  `sidebar-link ${
-                    isActive
-                      ? 'sidebar-link-active'
-                      : ''
-                  }`
-                }
-              >
-                <span
-                  className="sidebar-link-icon"
-                  aria-hidden="true"
-                >
-                  ★
-                </span>
-
-                <span>
-                  نمایه هنرمند
-                </span>
-              </NavLink>
-            </>
-          ) : null}
 
           {visibleRoleNavigation
             .length > 0 ? (

@@ -1,83 +1,54 @@
-
-
-export interface NotificationItem {
-  id: string;
-  message: string;
-  isRead: boolean;
-  type: 'user' | 'artist' | 'admin';
-}
+import { getNotificationIcon, formatRelativeTime } from '../utils/notificationPresentation';
+import type { AppNotification } from '../types';
 
 interface NotificationCardProps {
-  notification: NotificationItem;
+  notification: AppNotification;
   onMarkAsRead: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-export default function NotificationCard({ notification, onMarkAsRead, onDelete }: NotificationCardProps) {
+export default function NotificationCard({
+  notification,
+  onMarkAsRead,
+  onDelete,
+}: NotificationCardProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '15px',
-        margin: '10px 0',
-        borderRadius: '8px',
-        border: '1px solid #e0e0e0',
-        backgroundColor: notification.isRead ? '#ffffff' : '#f4f9ff',
-        transition: 'all 0.2s ease-in-out',
-        direction: 'rtl'
-      }}
+    <article
+      className={`notification-card ${
+        notification.isRead ? '' : 'notification-card-unread'
+      }`}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        {!notification.isRead && (
-          <span
-            style={{
-              width: '8px',
-              height: '8px',
-              backgroundColor: '#0070f3',
-              borderRadius: '50%',
-              display: 'inline-block'
-            }}
-          ></span>
-        )}
-        <p style={{ margin: 0, color: '#333', fontSize: '14px' }}>
-          {notification.message}
-        </p>
+      <div className="notification-card-main">
+        <span className="notification-icon" aria-hidden="true">
+          {getNotificationIcon(notification.kind)}
+        </span>
+
+        <div>
+          <strong>{notification.title}</strong>
+          <p>{notification.message}</p>
+          <small>{formatRelativeTime(notification.createdAt)}</small>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {!notification.isRead && (
+      <div className="notification-card-actions">
+        {!notification.isRead ? (
           <button
+            type="button"
+            className="inline-text-button"
             onClick={() => onMarkAsRead(notification.id)}
-            style={{
-              backgroundColor: '#e1f5fe',
-              color: '#0288d1',
-              border: 'none',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
           >
             علامت‌گذاری به عنوان خوانده شده
           </button>
-        )}
+        ) : null}
+
         <button
+          type="button"
+          className="inline-text-button inline-text-button-danger"
           onClick={() => onDelete(notification.id)}
-          style={{
-            backgroundColor: '#ffebee',
-            color: '#c62828',
-            border: 'none',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
         >
-          حذف اعلان
+          حذف
         </button>
       </div>
-    </div>
+    </article>
   );
 }

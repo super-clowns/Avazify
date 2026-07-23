@@ -102,11 +102,6 @@ export default function AppRoutes() {
           />
 
           <Route
-            path="/artist/:artistId"
-            element={<ArtistProfilePage />}
-          />
-
-          <Route
             element={
               <RoleRoute
                 allowedRoles={['artist']}
@@ -118,22 +113,22 @@ export default function AppRoutes() {
               element={<ArtistManagementPage />}
             />
           </Route>
-        </Route>
 
-        <Route
-          element={
-            <RoleRoute
-              allowedRoles={[
-                'support',
-                'admin',
-              ]}
-            />
-          }
-        >
           <Route
-            path={APP_PATHS.dashboard}
-            element={<DashboardPage />}
-          />
+            element={
+              <RoleRoute
+                allowedRoles={[
+                  'support',
+                  'admin',
+                ]}
+              />
+            }
+          >
+            <Route
+              path={APP_PATHS.dashboard}
+              element={<DashboardPage />}
+            />
+          </Route>
         </Route>
       </Route>
 

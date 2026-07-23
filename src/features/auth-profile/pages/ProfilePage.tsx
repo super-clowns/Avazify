@@ -13,6 +13,9 @@ import UserConnectionsModal from '../components/UserConnectionsModal';
 import { useAuth } from '../hooks/useAuth';
 import { useFollow } from '../hooks/useFollow';
 
+import VerifiedArtistExtras from '../../admin-artist/components/VerifiedArtistExtras';
+import VerifiedBadge from '../../../components/VerifiedBadge';
+
 import {
   getAvatarInitial,
   getDailyStreamLimit,
@@ -158,13 +161,7 @@ export default function ProfilePage() {
             ? 'نمایه کاربری من'
             : `نمایه ${profileUser.displayName}`
         }
-        description="سیستم دنبال‌کردن کاربران به وضعیت مرکزی متصل است و تمام ارتباطات کاربران پس از Refresh نیز حفظ می‌شوند."
-        items={[
-          'دنبال‌کردن و لغو دنبال‌کردن کاربران',
-          'شمارش پویای دنبال‌کنندگان و دنبال‌شوندگان',
-          'نمایش فهرست کامل ارتباطات هر کاربر',
-          'ذخیره دائمی روابط کاربران در Local Storage',
-        ]}
+        
         actions={
           isOwnProfile ? (
             <Button
@@ -235,6 +232,12 @@ export default function ProfilePage() {
                       .displayName
                   }
                 </h2>
+
+                {profileUser.role === 'artist' && 
+                profileUser.artistVerificationStatus === 'approved' && 
+                (
+                  <VerifiedBadge size={20} tooltip="هنرمند تایید شده پلتفرم" />
+                )}
 
                 <span
                   className={`subscription-pill ${subscriptionClass}`}
@@ -557,6 +560,12 @@ export default function ProfilePage() {
           )
         }
       />
+
+      <VerifiedArtistExtras
+        user={profileUser}
+        isGoldViewer={currentUser?.subscription.tier === 'gold'}
+      />
+
     </>
   );
 }

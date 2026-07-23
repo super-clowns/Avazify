@@ -1,66 +1,57 @@
-import { useState } from 'react';
+import { Link } from 'react-router-dom';
+
+import { useAuth } from '../../auth-profile/hooks/useAuth';
+
 import NotificationCard from '../components/NotificationCard';
 import EmptyNotifications from '../components/EmptyNotifications';
-import type { NotificationItem } from '../components/NotificationCard';
 
+import { useNotificationStore } from '../data/notificationStore';
 
-export default function Notifications() {
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    { id: '1', message: 'هشدار: مهلت اشتراک طلایی شما ۳ روز دیگر به اتمام می‌رسد.', isRead: false, type: 'user' },
-    { id: '2', message: 'درخواست احراز هویت هنرمند «آرش» در انتظار بررسی شماست.', isRead: false, type: 'admin' },
-    { id: '3', message: 'حساب هنری شما با موفقیت توسط پشتیبان تایید شد.', isRead: true, type: 'artist' },
-  ]);
- 
-  const handleMarkAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-  };
+export default function NotificationsPage() {
+  const { currentUser } = useAuth();
 
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
-  };
+  const { notifications, markAsRead, markAllAsRead, remove } = useNotificationStore(
+    currentUser?.id ?? '',
+  );
 
-  const handleDelete = (id: string) => {
-    setNotifications(notifications.filter(n => n.id !== id));
-  };
+  const hasUnread = notifications.some((n) => !n.isRead);
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', direction: 'rtl' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0, color: '#111' }}>صندوق اعلانات</h2>
-        
-        {notifications.some(n => !n.isRead) && (
-          <button
-            onClick={handleMarkAllAsRead}
-            style={{
-              backgroundColor: '#0070f3',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            خواندن همه اعلانات
-          </button>
-        )}
+    <section className="phase-page">
+      <div className="page-heading">
+        <div>
+          <p className="page-eyebrow">Notifications Module</p>
+          <h1>اعلانات</h1>
+        </div>
+
+        {hasUnread ? (
+          <div className="page-actions">
+            <button type="button" className="button-secondary" onClick={markAllAsRead}>
+              خواندن همه اعلانات
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {notifications.length === 0 ? (
         <EmptyNotifications />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {notifications.map(notif => (
-            <NotificationCard
+        <div className="notification-list">
+          {notifications.map((notif) => (
+            <Link
               key={notif.id}
-              notification={notif}
-              onMarkAsRead={handleMarkAsRead}
-              onDelete={handleDelete}
-            />
+              to={notif.actionPath ?? '#'}
+              className="notification-link-wrapper"
+            >
+              <NotificationCard
+                notification={notif}
+                onMarkAsRead={markAsRead}
+                onDelete={remove}
+              />
+            </Link>
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

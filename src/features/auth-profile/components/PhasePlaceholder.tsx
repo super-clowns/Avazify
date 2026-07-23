@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 interface PhasePlaceholderProps {
   eyebrow: string;
   title: string;
-  description: string;
-  items: string[];
+  description?: string;
+  items?: string[];
   actions?: ReactNode;
   children?: ReactNode;
 }
@@ -28,9 +28,11 @@ export default function PhasePlaceholder({
 
           <h1>{title}</h1>
 
-          <p className="page-description">
-            {description}
-          </p>
+          {description ? (
+            <p className="page-description">
+              {description}
+            </p>
+          ) : null}
         </div>
 
         {actions ? (
@@ -42,26 +44,24 @@ export default function PhasePlaceholder({
 
       {children}
 
-      <div className="phase-checklist-card">
-        <div
-          className="phase-checklist-icon"
-          aria-hidden="true"
-        >
-          ✓
-        </div>
+      {items && items.length > 0 ? (
+        <div className="phase-checklist-card">
+          <div
+            className="phase-checklist-icon"
+            aria-hidden="true"
+          >
+            ✓
+          </div>
 
-        <div>
-          <h2>
-            
-          </h2>
-
-          <ul>
-            {items.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+          <div>
+            <ul>
+              {items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </div>
+      ) : null}
     </section>
   );
 }
