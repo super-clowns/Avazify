@@ -1,32 +1,66 @@
-# React + TypeScript + Vite
+# Avazify - فاز اول فرانت‌اند
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+آوازیفای یک رابط کاربری کامل و واکنش‌گرا برای سرویس استریم موسیقی است که با React، TypeScript و Vite پیاده‌سازی شده است. داده‌های فاز اول به‌صورت ماک در Local Storage مرورگر ذخیره می‌شوند و تمام نقش‌های شنونده، هنرمند، پشتیبان و مدیر سامانه قابل آزمایش هستند.
 
-Currently, two official plugins are available:
+## اجرا
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+برای ساخت نسخه نهایی:
+
+```bash
+npm run build
+npm run preview
+```
+
+برای اجرای تست‌ها:
+
+```bash
+npm test
+```
+
+## حساب‌های آزمایشی
+
+رمز عبور همه حساب‌ها `Demo1234` است.
+
+| نقش | ایمیل |
+|---|---|
+| شنونده پایه | `sara@example.com` |
+| شنونده طلایی | `arman@example.com` |
+| هنرمند تأییدشده | `nila.artist@example.com` |
+| هنرمند در انتظار تأیید | `ava.pending@example.com` |
+| پشتیبان | `support@example.com` |
+| مدیر سامانه | `admin@example.com` |
+
+## بخش‌های پیاده‌سازی‌شده
+
+- ورود، ثبت‌نام شنونده و هنرمند، فراموشی رمز عبور و سیاست حریم خصوصی
+- خانه شخصی‌سازی‌شده بر اساس نقش و سطح اشتراک
+- نمایه کاربر و هنرمند، دنبال‌کردن، ویرایش اطلاعات و محدودیت عکس نمایه
+- تنظیمات اعلان، صدا، زبان، حالت فشرده، اشتراک، بازنشانی و حذف حساب
+- اعلانات نقش‌محور با خواندن، خواندن همه و حذف
+- ساخت، ویرایش و حذف پلی‌لیست با محدودیت‌های اشتراک
+- جستجو، فیلتر و مرتب‌سازی آلبوم‌ها و تک‌آهنگ‌ها
+- پخش‌کننده واقعی صدا با صف پخش، جابه‌جایی زمان، صدا، شافل، تکرار و متن آهنگ
+- محدودیت ۶۰ استریم روزانه برای اشتراک پایه و دانلود برای اشتراک‌های نقره‌ای و طلایی
+- مدیریت آثار برای هنرمندان تأییدشده
+- احراز هویت هنرمندان، تیکت‌ها، حسابرسی مالی، قیمت‌گذاری پویا و گزارش اشتراک‌ها
+- طراحی واکنش‌گرا برای دسکتاپ، تبلت و موبایل
+- PWA با Manifest و Service Worker
+- بیش از ۱۰ تست واحد برای منطق اصلی فاز اول
+
+## ساختار اصلی
+
+```text
+src/
+  components/   اجزای رابط کاربری قابل استفاده مجدد
+  context/      وضعیت برنامه، پخش‌کننده و پیام‌ها
+  data/         داده‌های ماک اولیه
+  domain/       منطق خالص و قابل تست
+  layout/       پوسته برنامه و پخش‌کننده
+  pages/        صفحات فاز اول
+  styles/       طراحی سراسری واکنش‌گرا
+```

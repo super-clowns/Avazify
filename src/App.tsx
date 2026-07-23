@@ -1,34 +1,22 @@
-import {
-  BrowserRouter,
-} from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 
-import AppRoutes from './config/routes';
+import ToastViewport from './components/ToastViewport';
+import { AppStateProvider } from './context/AppStateContext';
+import { PlayerProvider } from './context/PlayerContext';
+import { ToastProvider } from './context/ToastContext';
+import AppRoutes from './routes';
 
-import {
-  AudioProvider,
-} from './context/AudioContext';
-
-import {
-  AuthProvider,
-} from './context/AuthContext';
-
-import './features/auth-profile/auth-profile.css';
-import './features/auth-profile/auth-flow.css';
-import './features/auth-profile/persistence.css';
-import './features/auth-profile/profile-management.css';
-import './features/auth-profile/follow-system.css';
-import './features/auth-profile/home-dashboard.css';
-import './features/admin-artist/admin-artist.css';
-
-// Root application providers.
 export default function App() {
   return (
-    <AudioProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </AudioProvider>
+    <BrowserRouter>
+      <ToastProvider>
+        <AppStateProvider>
+          <PlayerProvider>
+            <AppRoutes />
+            <ToastViewport />
+          </PlayerProvider>
+        </AppStateProvider>
+      </ToastProvider>
+    </BrowserRouter>
   );
 }

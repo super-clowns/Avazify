@@ -1,101 +1,52 @@
-import {
-  useEffect,
-  type ReactNode,
-} from 'react';
+import { useEffect, type ReactNode } from 'react';
+import Icon from './Icon';
 
-export interface ModalProps {
-  isOpen: boolean;
+interface ModalProps {
+  open: boolean;
   title: string;
-  children: ReactNode;
+  description?: string;
   onClose: () => void;
+  children: ReactNode;
   footer?: ReactNode;
   size?: 'small' | 'medium' | 'large';
 }
 
-// Accessible modal shell.
-export default function Modal({
-  isOpen,
-  title,
-  children,
-  onClose,
-  footer,
-  size = 'medium',
-}: ModalProps) {
+export default function Modal({ open, title, description, onClose, children, footer, size = 'medium' }: ModalProps) {
   useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
-
-    const handleKeyDown = (
-      event: KeyboardEvent,
-    ) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
+    if (!open) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
     };
-
-    const previousOverflow =
-      document.body.style.overflow;
-
-    document.body.style.overflow = 'hidden';
-
-    window.addEventListener(
-      'keydown',
-      handleKeyDown,
-    );
-
+    document.addEventListener('keydown', handleKey);
+    document.body.classList.add('modal-open');
     return () => {
-      document.body.style.overflow =
-        previousOverflow;
-
-      window.removeEventListener(
-        'keydown',
-        handleKeyDown,
-      );
+      document.removeEventListener('keydown', handleKey);
+      document.body.classList.remove('modal-open');
     };
-  }, [isOpen, onClose]);
+  }, [onClose, open]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!open) return null;
 
   return (
-    <div
-      className="ui-modal-backdrop"
-      role="presentation"
-      onMouseDown={onClose}
-    >
+    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
-        className={`ui-modal ui-modal-${size}`}
+        className={`modal-card modal-${size}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        onMouseDown={(event) =>
-          event.stopPropagation()
-        }
+        onMouseDown={(event) => event.stopPropagation()}
       >
-        <header className="ui-modal-header">
-          <h2 id="modal-title">{title}</h2>
-
-          <button
-            type="button"
-            className="ui-icon-button"
-            onClick={onClose}
-            aria-label="بستن پنجره"
-          >
-            ×
+        <header className="modal-header">
+          <div>
+            <h2 id="modal-title">{title}</h2>
+            {description ? <p>{description}</p> : null}
+          </div>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="بستن پنجره">
+            <Icon name="close" />
           </button>
         </header>
-
-        <div className="ui-modal-body">
-          {children}
-        </div>
-
-        {footer ? (
-          <footer className="ui-modal-footer">
-            {footer}
-          </footer>
-        ) : null}
+        <div className="modal-body">{children}</div>
+        {footer ? <footer className="modal-footer">{footer}</footer> : null}
       </section>
     </div>
   );
