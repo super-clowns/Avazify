@@ -2,46 +2,41 @@ import { Link } from 'react-router-dom';
 
 import Button from '../../../components/Button';
 
-import { APP_PATHS } from '../../../config/paths';
-
 import {
-  mockAlbums,
-  mockFeaturedTracks,
-} from '../../../services/mockData';
+  APP_PATHS,
+} from '../../../config/paths';
 
+import HomeUserSuggestions from '../components/HomeUserSuggestions';
 import PhasePlaceholder from '../components/PhasePlaceholder';
 
-import { useAuth } from '../hooks/useAuth';
+import { useHomeFeed } from '../hooks/useHomeFeed';
+
+import {
+  formatHomeDate,
+  formatPlayCount,
+  getReleaseTypeLabel,
+} from '../utils/homePresentation';
 
 import {
   getRoleLabel,
   getSubscriptionLabel,
 } from '../utils/userPresentation';
 
-const recentPlaylists = [
-  {
-    id: 'p1',
-    title: 'تمرکز شبانه',
-    tracks: 18,
-    symbol: '◐',
-  },
-  {
-    id: 'p2',
-    title: 'پاپ فارسی',
-    tracks: 32,
-    symbol: '♪',
-  },
-  {
-    id: 'p3',
-    title: 'آرامش',
-    tracks: 14,
-    symbol: '≈',
-  },
-];
-
-// User home page with central state.
+// Personalized authenticated home page.
 export default function HomePage() {
-  const { currentUser } = useAuth();
+  const {
+    currentUser,
+    followedUsers,
+    suggestedUsers,
+    visibleTracks,
+    visibleReleases,
+    followerCount,
+    followingCount,
+    dailyStreamLimit,
+    playlistLimit,
+    streamUsagePercent,
+    hasEarlyAccess,
+  } = useHomeFeed();
 
   if (!currentUser) {
     return (
@@ -51,80 +46,108 @@ export default function HomePage() {
         </h1>
 
         <p>
-          برای نمایش صفحه خانه، یک حساب
-          آزمایشی انتخاب کنید.
+          برای مشاهده صفحه خانه،
+          ابتدا وارد حساب شوید.
         </p>
       </section>
     );
   }
 
-  const isGoldUser =
-    currentUser.subscription.tier ===
-    'gold';
-
   const subscriptionClass =
     `subscription-pill-${currentUser.subscription.tier}`;
 
+  const roleAction =
+    currentUser.role === 'artist'
+      ? {
+          title:
+            'مدیریت آثار هنری',
+          description:
+            currentUser.artistVerificationStatus ===
+            'approved'
+              ? 'انتشارها و آثار هنری خود را مدیریت کنید.'
+              : 'درخواست هنرمندی شما هنوز در انتظار تأیید است.',
+          path:
+            currentUser.artistVerificationStatus ===
+            'approved'
+              ? APP_PATHS.artistManagement
+              : APP_PATHS.profile,
+          icon: '♫',
+        }
+      : currentUser.role ===
+          'support'
+        ? {
+            title:
+              'داشبورد پشتیبانی',
+            description:
+              'تیکت‌ها و درخواست‌های کاربران را بررسی کنید.',
+            path:
+              APP_PATHS.dashboard,
+            icon: '▦',
+          }
+        : currentUser.role ===
+            'admin'
+          ? {
+              title:
+                'داشبورد مدیریت',
+              description:
+                'وضعیت سامانه و گزارش‌های مدیریتی را بررسی کنید.',
+              path:
+                APP_PATHS.dashboard,
+              icon: '⚙',
+            }
+          : {
+              title:
+                'پلی‌لیست‌های من',
+              description:
+                'مجموعه‌های موسیقی شخصی خود را مشاهده کنید.',
+              path:
+                APP_PATHS.playlists,
+              icon: '▤',
+            };
+
   return (
     <PhasePlaceholder
-      eyebrow="User Module / Central State"
+      eyebrow="User Module / Personalized Home"
       title={`سلام، ${currentUser.displayName}`}
-      description="صفحه خانه اکنون اطلاعات نقش، اشتراک و نمایه را از AuthContext مرکزی دریافت می‌کند و با تغییر حساب آزمایشی بلافاصله به‌روزرسانی می‌شود."
+      description="صفحه خانه براساس نقش، اشتراک، کاربران دنبال‌شده و آمار حساب فعال شخصی‌سازی شده است."
       items={[
-        'مدل یکپارچه User برای هر چهار نقش سامانه',
-        'وضعیت مرکزی کاربر فعال با React Context و useReducer',
-        'نمایش شرطی امکانات بر اساس نقش و سطح اشتراک',
-        'پنج حساب آزمایشی برای بررسی حالت‌های مختلف رابط کاربری',
+        'پیشنهاد آثار براساس کاربران و هنرمندان دنبال‌شده',
+        'نمایش مصرف روزانه و محدودیت‌های اشتراک',
+        'نمایش فعالیت‌ها و ارتباطات حساب فعال',
+        'اقدام سریع متناسب با نقش کاربر',
       ]}
       actions={
-        <Button
-          variant="secondary"
-          onClick={() =>
-            window.scrollTo({
-              top:
-                document.body
-                  .scrollHeight,
-              behavior: 'smooth',
-            })
-          }
+        <Link
+          className="ui-button ui-button-secondary ui-button-medium"
+          to={APP_PATHS.profile}
         >
-          مشاهده جزئیات فاز
-        </Button>
+          مشاهده پروفایل
+        </Link>
       }
     >
-      <div className="user-state-strip">
-        <div>
-          <strong>
-            وضعیت فعال از Context مرکزی
-          </strong>
+      <section className="personalized-home-hero">
+        <div className="personalized-home-hero-copy">
+          <div className="home-hero-badges">
+            <span
+              className={`subscription-pill ${subscriptionClass}`}
+            >
+              {getSubscriptionLabel(
+                currentUser.subscription.tier,
+              )}
+            </span>
 
-          <span>
-            {getRoleLabel(
-              currentUser.role,
-            )}{' '}
-            ·{' '}
-            {getSubscriptionLabel(
-              currentUser.subscription
-                .tier,
-            )}
-          </span>
-        </div>
+            <span className="home-role-badge">
+              {getRoleLabel(
+                currentUser.role,
+              )}
+            </span>
 
-        <code>
-          {currentUser.id}
-        </code>
-      </div>
-
-      <section className="home-hero-card">
-        <div>
-          <span
-            className={`subscription-pill ${subscriptionClass}`}
-          >
-            {getSubscriptionLabel(
-              currentUser.subscription
-                .tier,
-            )}
-          </span>
+            {hasEarlyAccess ? (
+              <span className="home-early-badge">
+                دسترسی زودهنگام
+              </span>
+            ) : null}
+          </div>
 
           <h2>
             موسیقی مناسب لحظه‌ات را
@@ -133,219 +156,519 @@ export default function HomePage() {
 
           <p>
             {currentUser.bio ||
-              'به آرشیو برو، یک آهنگ انتخاب کن و از پخش‌کننده مشترک پروژه استفاده کن.'}
+              'آثار جدید را پیدا کنید، کاربران موردعلاقه خود را دنبال کنید و پلی‌لیست‌های شخصی بسازید.'}
           </p>
 
-          <div className="home-hero-actions">
+          <div className="personalized-home-actions">
             <Link
               className="ui-button ui-button-primary ui-button-medium"
               to={APP_PATHS.archive}
             >
-              رفتن به آرشیو
+              ورود به آرشیو
             </Link>
 
             <Link
               className="ui-button ui-button-ghost ui-button-medium"
-              to={
-                APP_PATHS.playlists
-              }
+              to={roleAction.path}
             >
-              پلی‌لیست‌های من
+              {roleAction.title}
             </Link>
           </div>
         </div>
 
         <div
-          className="home-hero-art"
+          className="personalized-home-art"
           aria-hidden="true"
         >
           <span>♫</span>
           <span>♪</span>
           <span>♬</span>
+          <span>★</span>
         </div>
       </section>
 
-      <section className="dashboard-section">
-        <div className="section-heading">
-          <div>
-            <p className="page-eyebrow">
-              Recently played
-            </p>
+      <section className="home-stat-grid">
+        <article className="home-stat-card">
+          <span>
+            دنبال‌کننده
+          </span>
 
-            <h2>
-              آخرین پلی‌لیست‌های
-              شنیده‌شده
-            </h2>
-          </div>
-
-          <Link
-            to={APP_PATHS.playlists}
-          >
-            مشاهده همه
-          </Link>
-        </div>
-
-        <div className="playlist-summary-grid">
-          {recentPlaylists.map(
-            (playlist) => (
-              <article
-                className="playlist-summary-card"
-                key={playlist.id}
-              >
-                <div className="playlist-summary-cover">
-                  {playlist.symbol}
-                </div>
-
-                <div>
-                  <strong>
-                    {playlist.title}
-                  </strong>
-
-                  <span>
-                    {playlist.tracks}{' '}
-                    آهنگ
-                  </span>
-                </div>
-              </article>
-            ),
-          )}
-        </div>
-      </section>
-
-      <section className="dashboard-section">
-        <div className="section-heading">
-          <div>
-            <p className="page-eyebrow">
-              New releases
-            </p>
-
-            <h2>
-              آخرین آلبوم‌های
-              منتشرشده
-            </h2>
-          </div>
-
-          <Link
-            to={APP_PATHS.archive}
-          >
-            ورود به آرشیو
-          </Link>
-        </div>
-
-        <div className="media-card-grid">
-          {mockAlbums
-            .slice(0, 4)
-            .map(
-              (
-                album,
-                index,
-              ) => (
-                <Link
-                  className="media-card"
-                  key={album.id}
-                  to={APP_PATHS.album(
-                    album.id,
-                  )}
-                >
-                  <div
-                    className={`media-card-cover media-cover-${
-                      (index %
-                        4) +
-                      1
-                    }`}
-                  >
-                    <span>♫</span>
-                  </div>
-
-                  <strong>
-                    {album.title}
-                  </strong>
-
-                  <span>
-                    {album.artist}
-                  </span>
-                </Link>
-              ),
+          <strong>
+            {followerCount.toLocaleString(
+              'fa-IR',
             )}
-        </div>
-      </section>
+          </strong>
 
-      <section className="dashboard-section">
-        <div className="section-heading">
-          <div>
-            <p className="page-eyebrow">
-              Popular now
-            </p>
+          <Link to={APP_PATHS.profile}>
+            مشاهده ارتباطات
+          </Link>
+        </article>
 
-            <h2>
-              آهنگ‌های پرشنونده
-            </h2>
-          </div>
-        </div>
+        <article className="home-stat-card">
+          <span>
+            دنبال‌شونده
+          </span>
 
-        <div className="compact-track-list">
-          {mockFeaturedTracks
-            .slice(0, 4)
-            .map(
-              (
-                track,
-                index,
-              ) => (
-                <div
-                  className="compact-track-row"
-                  key={track.id}
-                >
-                  <span className="compact-track-index">
-                    {index + 1}
-                  </span>
-
-                  <div className="compact-track-cover">
-                    ♪
-                  </div>
-
-                  <div className="compact-track-copy">
-                    <strong>
-                      {track.title}
-                    </strong>
-
-                    <span>
-                      {track.artist}
-                    </span>
-                  </div>
-
-                  <span className="compact-track-stat">
-                    {track.listeners.toLocaleString(
-                      'fa-IR',
-                    )}{' '}
-                    شنونده
-                  </span>
-                </div>
-              ),
+          <strong>
+            {followingCount.toLocaleString(
+              'fa-IR',
             )}
-        </div>
+          </strong>
+
+          <Link to={APP_PATHS.profile}>
+            مدیریت دنبال‌شوندگان
+          </Link>
+        </article>
+
+        <article className="home-stat-card">
+          <span>
+            پلی‌لیست‌ها
+          </span>
+
+          <strong>
+            {currentUser.stats.playlistCount.toLocaleString(
+              'fa-IR',
+            )}
+
+            {playlistLimit === null
+              ? ' / ∞'
+              : ` / ${playlistLimit.toLocaleString(
+                  'fa-IR',
+                )}`}
+          </strong>
+
+          <Link to={APP_PATHS.playlists}>
+            مشاهده پلی‌لیست‌ها
+          </Link>
+        </article>
+
+        <article className="home-stat-card">
+          <span>
+            استریم امروز
+          </span>
+
+          <strong>
+            {currentUser.stats.dailyStreams.toLocaleString(
+              'fa-IR',
+            )}
+
+            {dailyStreamLimit === null
+              ? ' / ∞'
+              : ` / ${dailyStreamLimit.toLocaleString(
+                  'fa-IR',
+                )}`}
+          </strong>
+
+          <Link to={APP_PATHS.settings}>
+            تنظیمات حساب
+          </Link>
+        </article>
       </section>
 
-      {isGoldUser ? (
-        <section className="early-access-card">
-          <span className="subscription-pill subscription-pill-gold">
-            ویژه اشتراک طلایی
+      {dailyStreamLimit !== null ? (
+        <section className="home-quota-card">
+          <div className="home-quota-heading">
+            <div>
+              <strong>
+                مصرف روزانه اشتراک پایه
+              </strong>
+
+              <p>
+                امروز{' '}
+                {currentUser.stats.dailyStreams.toLocaleString(
+                  'fa-IR',
+                )}{' '}
+                استریم از{' '}
+                {dailyStreamLimit.toLocaleString(
+                  'fa-IR',
+                )}{' '}
+                استریم مجاز استفاده
+                شده است.
+              </p>
+            </div>
+
+            <span>
+              {streamUsagePercent.toLocaleString(
+                'fa-IR',
+              )}
+              ٪
+            </span>
+          </div>
+
+          <div
+            className="home-quota-progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={
+              streamUsagePercent
+            }
+          >
+            <span
+              style={{
+                width: `${streamUsagePercent}%`,
+              }}
+            />
+          </div>
+
+          <div className="home-quota-footer">
+            <span>
+              با ارتقای اشتراک، محدودیت
+              استریم روزانه حذف می‌شود.
+            </span>
+
+            <Link to={APP_PATHS.settings}>
+              بررسی اشتراک‌ها
+            </Link>
+          </div>
+        </section>
+      ) : (
+        <section className="home-unlimited-card">
+          <span aria-hidden="true">
+            ∞
           </span>
 
           <div>
+            <strong>
+              استریم روزانه نامحدود
+            </strong>
+
+            <p>
+              حساب فعال محدودیت روزانه
+              برای پخش موسیقی ندارد.
+            </p>
+          </div>
+        </section>
+      )}
+
+      <section className="home-workspace-card">
+        <div className="home-workspace-icon">
+          {roleAction.icon}
+        </div>
+
+        <div>
+          <p className="page-eyebrow">
+            Role workspace
+          </p>
+
+          <h2>
+            {roleAction.title}
+          </h2>
+
+          <p>
+            {roleAction.description}
+          </p>
+        </div>
+
+        <Link
+          className="ui-button ui-button-secondary ui-button-medium"
+          to={roleAction.path}
+        >
+          ورود به بخش
+        </Link>
+      </section>
+
+      <section className="home-dashboard-section">
+        <div className="home-section-heading">
+          <div>
+            <p className="page-eyebrow">
+              Personalized releases
+            </p>
+
             <h2>
-              دسترسی زودهنگام به آثار
-              جدید
+              انتشارهای پیشنهادی
             </h2>
 
             <p>
-              این بخش فقط زمانی نمایش
-              داده می‌شود که حساب فعال
-              دارای اشتراک طلایی باشد.
+              آثار هنرمندان دنبال‌شده در
+              اولویت نمایش قرار دارند.
+            </p>
+          </div>
+
+          <Link to={APP_PATHS.archive}>
+            مشاهده آرشیو
+          </Link>
+        </div>
+
+        <div className="home-release-grid">
+          {visibleReleases
+            .slice(0, 6)
+            .map((release) => {
+              const artistUser =
+                release.artistUserId
+                  ? followedUsers.find(
+                      (user) =>
+                        user.id ===
+                        release.artistUserId,
+                    )
+                  : undefined;
+
+              return (
+                <article
+                  className="home-release-card"
+                  key={release.id}
+                >
+                  <div className="home-release-cover">
+                    <span>
+                      {release.coverSymbol}
+                    </span>
+
+                    {release.isEarlyAccess ? (
+                      <small>
+                        Early
+                      </small>
+                    ) : null}
+                  </div>
+
+                  <div className="home-release-copy">
+                    <div className="home-release-meta">
+                      <span>
+                        {getReleaseTypeLabel(
+                          release.type,
+                        )}
+                      </span>
+
+                      <span>
+                        {formatHomeDate(
+                          release.publishedAt,
+                        )}
+                      </span>
+                    </div>
+
+                    <strong>
+                      {release.title}
+                    </strong>
+
+                    {artistUser ? (
+                      <Link
+                        to={APP_PATHS.profileByUsername(
+                          artistUser.username,
+                        )}
+                      >
+                        {release.artistName}
+                      </Link>
+                    ) : (
+                      <span>
+                        {release.artistName}
+                      </span>
+                    )}
+
+                    <p>
+                      {release.genre}
+                      {' · '}
+                      {release.trackCount.toLocaleString(
+                        'fa-IR',
+                      )}{' '}
+                      بخش
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+        </div>
+      </section>
+
+      <section className="home-dashboard-section">
+        <div className="home-section-heading">
+          <div>
+            <p className="page-eyebrow">
+              Popular for you
+            </p>
+
+            <h2>
+              آهنگ‌های پیشنهادی
+            </h2>
+
+            <p>
+              ترتیب این فهرست براساس
+              دنبال‌شوندگان و میزان پخش
+              تنظیم شده است.
+            </p>
+          </div>
+        </div>
+
+        <div className="home-track-list">
+          {visibleTracks
+            .slice(0, 6)
+            .map((track, index) => (
+              <article
+                className="home-track-row"
+                key={track.id}
+              >
+                <span className="home-track-index">
+                  {(index + 1).toLocaleString(
+                    'fa-IR',
+                  )}
+                </span>
+
+                <div className="home-track-cover">
+                  {track.coverSymbol}
+                </div>
+
+                <div className="home-track-main">
+                  <strong>
+                    {track.title}
+                  </strong>
+
+                  <span>
+                    {track.artistName}
+                    {' · '}
+                    {track.genre}
+                  </span>
+                </div>
+
+                {track.isEarlyAccess ? (
+                  <span className="home-track-early">
+                    زودهنگام
+                  </span>
+                ) : null}
+
+                <span className="home-track-plays">
+                  {formatPlayCount(
+                    track.playCount,
+                  )}{' '}
+                  پخش
+                </span>
+
+                <time dir="ltr">
+                  {track.duration}
+                </time>
+
+                <Button
+                  variant="ghost"
+                  size="small"
+                  aria-label={`پخش ${track.title}`}
+                >
+                  ▶
+                </Button>
+              </article>
+            ))}
+        </div>
+      </section>
+
+      <section className="home-dashboard-section">
+        <div className="home-section-heading">
+          <div>
+            <p className="page-eyebrow">
+              Following activity
+            </p>
+
+            <h2>
+              فعالیت دنبال‌شوندگان
+            </h2>
+
+            <p>
+              نمایی سریع از حساب‌هایی
+              که دنبال می‌کنید.
+            </p>
+          </div>
+
+          <Link to={APP_PATHS.profile}>
+            مدیریت ارتباطات
+          </Link>
+        </div>
+
+        {followedUsers.length > 0 ? (
+          <div className="home-following-list">
+            {followedUsers
+              .slice(0, 5)
+              .map((user) => (
+                <article
+                  className="home-following-row"
+                  key={user.id}
+                >
+                  <Link
+                    className="home-following-profile"
+                    to={APP_PATHS.profileByUsername(
+                      user.username,
+                    )}
+                  >
+                    <div className="avatar home-following-avatar">
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={`عکس پروفایل ${user.displayName}`}
+                        />
+                      ) : (
+                        user.displayName
+                          .trim()
+                          .charAt(0) ||
+                        'A'
+                      )}
+                    </div>
+
+                    <div>
+                      <strong>
+                        {user.displayName}
+                      </strong>
+
+                      <span dir="ltr">
+                        @{user.username}
+                      </span>
+                    </div>
+                  </Link>
+
+                  <p>
+                    {user.role === 'artist'
+                      ? 'انتشارها و اخبار این هنرمند در پیشنهادهای شما اولویت دارند.'
+                      : 'فعالیت‌ها و پلی‌لیست‌های این کاربر در صفحه خانه نمایش داده می‌شوند.'}
+                  </p>
+
+                  <Link
+                    className="home-row-link"
+                    to={APP_PATHS.profileByUsername(
+                      user.username,
+                    )}
+                  >
+                    مشاهده پروفایل
+                  </Link>
+                </article>
+              ))}
+          </div>
+        ) : (
+          <div className="home-empty-state">
+            <span aria-hidden="true">
+              ♙
+            </span>
+
+            <strong>
+              هنوز کسی را دنبال نکرده‌اید
+            </strong>
+
+            <p>
+              از بخش کاربران پیشنهادی،
+              حساب‌های موردعلاقه خود را
+              دنبال کنید.
+            </p>
+          </div>
+        )}
+      </section>
+
+      <HomeUserSuggestions
+        users={suggestedUsers}
+      />
+
+      {hasEarlyAccess ? (
+        <section className="home-gold-access-card">
+          <div>
+            <span className="subscription-pill subscription-pill-gold">
+              ویژه اشتراک طلایی
+            </span>
+
+            <h2>
+              دسترسی زودهنگام فعال است
+            </h2>
+
+            <p>
+              انتشارهای دارای برچسب
+              زودهنگام قبل از عرضه عمومی
+              برای حساب شما نمایش داده
+              می‌شوند.
             </p>
           </div>
 
           <span
-            className="early-access-icon"
+            className="home-gold-access-icon"
             aria-hidden="true"
           >
             ★
