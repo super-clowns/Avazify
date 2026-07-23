@@ -11,6 +11,7 @@ export type {
   LoginInput,
   MockCredential,
   NotificationPreferences,
+  ProfileUpdateInput,
   SubscriptionInfo,
   SubscriptionTier,
   User,

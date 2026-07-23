@@ -24,6 +24,7 @@ import type {
   ListenerRegistrationInput,
   LoginInput,
   MockCredential,
+  ProfileUpdateInput,
   User,
   UserSettings,
 } from '../features/auth-profile/types';
@@ -133,10 +134,14 @@ function createCleanState():
   AuthState {
   return {
     users: cloneUsers(),
+
     credentials:
       cloneCredentials(),
+
     currentUserId: null,
+
     rememberMe: false,
+
     isInitialized: true,
   };
 }
@@ -238,13 +243,20 @@ function authReducer(
 
       return {
         ...state,
+
         currentUserId:
           action.payload,
+
         rememberMe: false,
       };
     }
 
-    case 'UPDATE_CURRENT_USER':
+    case 'UPDATE_CURRENT_USER': {
+      const updatedEmail =
+        action.payload.email
+          ?.trim()
+          .toLowerCase();
+
       return {
         ...state,
 
@@ -256,10 +268,30 @@ function authReducer(
                 ? {
                     ...user,
                     ...action.payload,
+
+                    email:
+                      updatedEmail ??
+                      user.email,
                   }
                 : user,
           ),
+
+        credentials:
+          updatedEmail
+            ? state.credentials.map(
+                (credential) =>
+                  credential.userId ===
+                  state.currentUserId
+                    ? {
+                        ...credential,
+                        email:
+                          updatedEmail,
+                      }
+                    : credential,
+              )
+            : state.credentials,
       };
+    }
 
     case 'UPDATE_SETTINGS':
       return {
@@ -807,6 +839,101 @@ export function AuthProvider({
           return createOperationResult(
             true,
             'در صورت وجود حساب، لینک بازیابی برای ایمیل واردشده ارسال می‌شود.',
+          );
+        },
+
+        updateProfile: (
+          input:
+            ProfileUpdateInput,
+        ) => {
+          if (!currentUser) {
+            return createOperationResult(
+              false,
+              'برای ویرایش پروفایل باید وارد حساب شوید.',
+            );
+          }
+
+          const normalizedEmail =
+            normalizeEmail(
+              input.email,
+            );
+
+          const emailExists =
+            state.users.some(
+              (user) =>
+                user.id !==
+                  currentUser.id &&
+                normalizeEmail(
+                  user.email,
+                ) ===
+                  normalizedEmail,
+            );
+
+          if (emailExists) {
+            return createOperationResult(
+              false,
+              'این ایمیل توسط حساب دیگری استفاده شده است.',
+            );
+          }
+
+          const avatarChanged =
+            input.avatar !==
+            currentUser.avatar;
+
+          if (
+            currentUser
+              .subscription
+              .tier === 'free' &&
+            avatarChanged
+          ) {
+            return createOperationResult(
+              false,
+              'کاربران اشتراک پایه امکان تغییر عکس پروفایل را ندارند.',
+            );
+          }
+
+          const changes:
+            Partial<EditableUserFields> =
+            {
+              displayName:
+                input.displayName
+                  .trim(),
+
+              email:
+                normalizedEmail,
+
+              bio:
+                input.bio.trim(),
+
+              birthDate:
+                input.birthDate,
+
+              gender:
+                input.gender,
+
+              avatar:
+                input.avatar,
+            };
+
+          const updatedUser: User = {
+            ...currentUser,
+            ...changes,
+            email:
+              normalizedEmail,
+          };
+
+          dispatch({
+            type:
+              'UPDATE_CURRENT_USER',
+
+            payload:
+              changes,
+          });
+
+          return createOperationResult(
+            true,
+            'اطلاعات پروفایل با موفقیت ذخیره شد.',
+            updatedUser,
           );
         },
 

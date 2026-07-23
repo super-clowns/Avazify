@@ -99,6 +99,15 @@ export interface ArtistRegistrationInput {
   portfolioFileNames: string[];
 }
 
+export interface ProfileUpdateInput {
+  displayName: string;
+  email: string;
+  bio: string;
+  birthDate: string | null;
+  gender: UserGender;
+  avatar: string | null;
+}
+
 export interface AuthOperationResult {
   success: boolean;
   message: string;
@@ -152,6 +161,10 @@ export interface AuthContextValue {
 
   requestPasswordReset: (
     email: string,
+  ) => AuthOperationResult;
+
+  updateProfile: (
+    input: ProfileUpdateInput,
   ) => AuthOperationResult;
 
   selectDemoUser: (

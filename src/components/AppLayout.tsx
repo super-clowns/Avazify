@@ -27,8 +27,12 @@ export default function AppLayout() {
     setIsSidebarOpen,
   ] = useState(false);
 
-  const location = useLocation();
-  const { currentUser } = useAuth();
+  const location =
+    useLocation();
+
+  const {
+    currentUser,
+  } = useAuth();
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -43,7 +47,9 @@ export default function AppLayout() {
       ? `${getRoleLabel(
           currentUser.role,
         )} · ${getSubscriptionLabel(
-          currentUser.subscription.tier,
+          currentUser
+            .subscription
+            .tier,
         )}`
       : 'بدون حساب فعال';
 
@@ -52,7 +58,9 @@ export default function AppLayout() {
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() =>
-          setIsSidebarOpen(false)
+          setIsSidebarOpen(
+            false,
+          )
         }
       />
 
@@ -62,9 +70,13 @@ export default function AppLayout() {
             type="button"
             className="mobile-menu-button"
             aria-label="باز کردن منوی اصلی"
-            aria-expanded={isSidebarOpen}
+            aria-expanded={
+              isSidebarOpen
+            }
             onClick={() =>
-              setIsSidebarOpen(true)
+              setIsSidebarOpen(
+                true,
+              )
             }
           >
             ☰
@@ -90,19 +102,27 @@ export default function AppLayout() {
               </strong>
 
               <span>
-                {accountDescription}
+                {
+                  accountDescription
+                }
               </span>
             </div>
 
-            <div
-              className="avatar avatar-small"
-              aria-hidden="true"
-            >
-              {currentUser
-                ? getAvatarInitial(
-                    currentUser,
-                  )
-                : 'A'}
+            <div className="avatar avatar-small">
+              {currentUser?.avatar ? (
+                <img
+                  src={
+                    currentUser.avatar
+                  }
+                  alt={`عکس پروفایل ${currentUser.displayName}`}
+                />
+              ) : currentUser ? (
+                getAvatarInitial(
+                  currentUser,
+                )
+              ) : (
+                'A'
+              )}
             </div>
           </div>
         </header>
