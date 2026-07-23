@@ -12,7 +12,13 @@ export const APP_PATHS = {
   archive: '/archive',
   artistManagement: '/artist/manage',
   dashboard: '/dashboard',
-  album: (albumId: string) => `/album/${albumId}`,
-  profileByUsername: (username: string) => `/profile/${username}`,
-  artistById: (artistId: string) => `/artist/${artistId}`,
+
+  album: (albumId: string) =>
+    `/album/${albumId}`,
+
+  profileByUsername: (username: string) =>
+    `/profile/${username}`,
+
+  artistById: (artistId: string) =>
+    `/artist/${artistId}`,
 } as const;

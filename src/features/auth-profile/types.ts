@@ -1,6 +1,13 @@
-export type UserRole = 'listener' | 'artist' | 'support' | 'admin';
+export type UserRole =
+  | 'listener'
+  | 'artist'
+  | 'support'
+  | 'admin';
 
-export type SubscriptionTier = 'free' | 'silver' | 'gold';
+export type SubscriptionTier =
+  | 'free'
+  | 'silver'
+  | 'gold';
 
 export type UserGender =
   | 'male'
@@ -57,10 +64,45 @@ export interface User {
   gender: UserGender;
   joinedAt: string;
   artistProfileId?: string;
+  artistPortfolio?: string[];
   artistVerificationStatus: ArtistVerificationStatus;
   stats: UserStats;
   settings: UserSettings;
   followedUserIds: string[];
+}
+
+export interface MockCredential {
+  userId: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+  rememberMe: boolean;
+}
+
+export interface ListenerRegistrationInput {
+  displayName: string;
+  email: string;
+  password: string;
+  birthDate: string;
+  gender: UserGender;
+}
+
+export interface ArtistRegistrationInput {
+  artistName: string;
+  email: string;
+  password: string;
+  portfolioUrl: string;
+  portfolioFileNames: string[];
+}
+
+export interface AuthOperationResult {
+  success: boolean;
+  message: string;
+  user?: User;
 }
 
 export interface FollowState {
@@ -71,13 +113,19 @@ export interface FollowState {
 
 export interface AuthState {
   users: User[];
+  credentials: MockCredential[];
   currentUserId: string | null;
   isInitialized: boolean;
 }
 
 export type EditableUserFields = Pick<
   User,
-  'displayName' | 'email' | 'avatar' | 'bio' | 'birthDate' | 'gender'
+  | 'displayName'
+  | 'email'
+  | 'avatar'
+  | 'bio'
+  | 'birthDate'
+  | 'gender'
 >;
 
 export interface AuthContextValue {
@@ -85,10 +133,42 @@ export interface AuthContextValue {
   currentUser: User | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
+
+  login: (
+    input: LoginInput,
+  ) => AuthOperationResult;
+
+  logout: () => void;
+
+  registerListener: (
+    input: ListenerRegistrationInput,
+  ) => AuthOperationResult;
+
+  registerArtist: (
+    input: ArtistRegistrationInput,
+  ) => AuthOperationResult;
+
+  requestPasswordReset: (
+    email: string,
+  ) => AuthOperationResult;
+
   selectDemoUser: (userId: string) => void;
-  updateCurrentUser: (changes: Partial<EditableUserFields>) => void;
-  updateSettings: (changes: Partial<UserSettings>) => void;
-  getUserById: (userId: string) => User | undefined;
-  getUserByUsername: (username: string) => User | undefined;
+
+  updateCurrentUser: (
+    changes: Partial<EditableUserFields>,
+  ) => void;
+
+  updateSettings: (
+    changes: Partial<UserSettings>,
+  ) => void;
+
+  getUserById: (
+    userId: string,
+  ) => User | undefined;
+
+  getUserByUsername: (
+    username: string,
+  ) => User | undefined;
+
   resetDemoState: () => void;
 }

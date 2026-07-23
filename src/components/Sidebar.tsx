@@ -1,12 +1,19 @@
-import { NavLink } from 'react-router-dom';
+import {
+  NavLink,
+  useNavigate,
+} from 'react-router-dom';
 
-import { APP_PATHS } from '../config/paths';
+import Button from './Button';
 
-import DemoAccountSwitcher from '../features/auth-profile/components/DemoAccountSwitcher';
+import {
+  APP_PATHS,
+} from '../config/paths';
 
 import { useAuth } from '../features/auth-profile/hooks/useAuth';
 
-import type { UserRole } from '../features/auth-profile/types';
+import type {
+  UserRole,
+} from '../features/auth-profile/types';
 
 import {
   getRoleLabel,
@@ -29,66 +36,76 @@ interface RoleNavigationItem
   roles: UserRole[];
 }
 
-const mainNavigation: NavigationItem[] = [
-  {
-    label: 'خانه',
-    icon: '⌂',
-    to: APP_PATHS.home,
-  },
-  {
-    label: 'آرشیو موسیقی',
-    icon: '♫',
-    to: APP_PATHS.archive,
-  },
-  {
-    label: 'پلی‌لیست‌ها',
-    icon: '▤',
-    to: APP_PATHS.playlists,
-  },
-  {
-    label: 'اعلانات',
-    icon: '◉',
-    to: APP_PATHS.notifications,
-  },
-  {
-    label: 'نمایه کاربر',
-    icon: '♙',
-    to: APP_PATHS.profile,
-  },
-  {
-    label: 'تنظیمات',
-    icon: '⚙',
-    to: APP_PATHS.settings,
-  },
-];
+const mainNavigation: NavigationItem[] =
+  [
+    {
+      label: 'خانه',
+      icon: '⌂',
+      to: APP_PATHS.home,
+    },
+    {
+      label: 'آرشیو موسیقی',
+      icon: '♫',
+      to: APP_PATHS.archive,
+    },
+    {
+      label: 'پلی‌لیست‌ها',
+      icon: '▤',
+      to: APP_PATHS.playlists,
+    },
+    {
+      label: 'اعلانات',
+      icon: '◉',
+      to: APP_PATHS.notifications,
+    },
+    {
+      label: 'نمایه کاربر',
+      icon: '♙',
+      to: APP_PATHS.profile,
+    },
+    {
+      label: 'تنظیمات',
+      icon: '⚙',
+      to: APP_PATHS.settings,
+    },
+  ];
 
-const roleNavigation: RoleNavigationItem[] = [
-  {
-    label: 'مدیریت آثار',
-    icon: '⬆',
-    to: APP_PATHS.artistManagement,
-    roles: ['artist'],
-  },
-  {
-    label: 'داشبورد پشتیبانی',
-    icon: '▦',
-    to: APP_PATHS.dashboard,
-    roles: ['support'],
-  },
-  {
-    label: 'داشبورد مدیریت',
-    icon: '▦',
-    to: APP_PATHS.dashboard,
-    roles: ['admin'],
-  },
-];
+const roleNavigation: RoleNavigationItem[] =
+  [
+    {
+      label: 'مدیریت آثار',
+      icon: '⬆',
+      to:
+        APP_PATHS.artistManagement,
+      roles: ['artist'],
+    },
+    {
+      label:
+        'داشبورد پشتیبانی',
+      icon: '▦',
+      to: APP_PATHS.dashboard,
+      roles: ['support'],
+    },
+    {
+      label:
+        'داشبورد مدیریت',
+      icon: '▦',
+      to: APP_PATHS.dashboard,
+      roles: ['admin'],
+    },
+  ];
 
 // Main responsive navigation.
 export default function Sidebar({
   isOpen,
   onClose,
 }: SidebarProps) {
-  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+
+  const {
+    currentUser,
+    logout,
+  } = useAuth();
 
   const visibleRoleNavigation =
     currentUser
@@ -103,9 +120,29 @@ export default function Sidebar({
   const artistProfilePath =
     currentUser?.artistProfileId
       ? APP_PATHS.artistById(
-          currentUser.artistProfileId,
+          currentUser
+            .artistProfileId,
         )
       : null;
+
+  const canManageArtistWorks =
+    currentUser?.role ===
+      'artist' &&
+    currentUser
+      .artistVerificationStatus ===
+      'approved';
+
+  const handleLogout = () => {
+    logout();
+    onClose();
+
+    navigate(
+      APP_PATHS.login,
+      {
+        replace: true,
+      },
+    );
+  };
 
   return (
     <>
@@ -136,7 +173,10 @@ export default function Sidebar({
           </div>
 
           <div>
-            <strong>Avazify</strong>
+            <strong>
+              Avazify
+            </strong>
+
             <span>
               Music for everyone
             </span>
@@ -224,32 +264,62 @@ export default function Sidebar({
               </p>
 
               {visibleRoleNavigation.map(
-                (item) => (
-                  <NavLink
-                    key={`${item.to}-${item.label}`}
-                    to={item.to}
-                    className={({
-                      isActive,
-                    }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? 'sidebar-link-active'
-                          : ''
-                      }`
-                    }
-                  >
-                    <span
-                      className="sidebar-link-icon"
-                      aria-hidden="true"
-                    >
-                      {item.icon}
-                    </span>
+                (item) => {
+                  const isDisabled =
+                    item.to ===
+                      APP_PATHS
+                        .artistManagement &&
+                    !canManageArtistWorks;
 
-                    <span>
-                      {item.label}
-                    </span>
-                  </NavLink>
-                ),
+                  if (isDisabled) {
+                    return (
+                      <div
+                        className="sidebar-link"
+                        key={`${item.to}-${item.label}`}
+                        title="حساب هنرمند هنوز تأیید نشده است."
+                        aria-disabled="true"
+                      >
+                        <span
+                          className="sidebar-link-icon"
+                          aria-hidden="true"
+                        >
+                          {item.icon}
+                        </span>
+
+                        <span>
+                          {item.label}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <NavLink
+                      key={`${item.to}-${item.label}`}
+                      to={item.to}
+                      className={({
+                        isActive,
+                      }) =>
+                        `sidebar-link ${
+                          isActive
+                            ? 'sidebar-link-active'
+                            : ''
+                        }`
+                      }
+                    >
+                      <span
+                        className="sidebar-link-icon"
+                        aria-hidden="true"
+                      >
+                        {item.icon}
+                      </span>
+
+                      <span>
+                        {item.label}
+                      </span>
+                    </NavLink>
+                  );
+                },
               )}
             </>
           ) : null}
@@ -283,11 +353,24 @@ export default function Sidebar({
           </div>
 
           <p>
-            وضعیت حساب در این فاز از
-            Context مرکزی خوانده می‌شود.
+            جلسه ورود فقط در حافظه
+            برنامه قرار دارد و با
+            تازه‌سازی صفحه پایان
+            می‌یابد.
           </p>
 
-          <DemoAccountSwitcher />
+          <div className="sidebar-logout">
+            <Button
+              variant="ghost"
+              size="small"
+              fullWidth
+              onClick={
+                handleLogout
+              }
+            >
+              خروج از حساب
+            </Button>
+          </div>
         </div>
       </aside>
     </>

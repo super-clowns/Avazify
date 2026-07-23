@@ -1,3 +1,7 @@
+import {
+  APP_PATHS,
+} from '../../../config/paths';
+
 import type {
   SubscriptionTier,
   User,
@@ -5,7 +9,10 @@ import type {
   UserRole,
 } from '../types';
 
-const roleLabels: Record<UserRole, string> = {
+const roleLabels: Record<
+  UserRole,
+  string
+> = {
   listener: 'شنونده',
   artist: 'هنرمند',
   support: 'پشتیبان',
@@ -54,7 +61,9 @@ export function getAvatarInitial(
   user: User,
 ) {
   return (
-    user.displayName.trim().charAt(0) || 'A'
+    user.displayName
+      .trim()
+      .charAt(0) || 'A'
   );
 }
 
@@ -75,5 +84,29 @@ export function getPlaylistLimit(
 export function getDailyStreamLimit(
   tier: SubscriptionTier,
 ) {
-  return tier === 'free' ? 60 : null;
+  return tier === 'free'
+    ? 60
+    : null;
+}
+
+// Return the default page for each role.
+export function getRoleHomePath(
+  user: User,
+) {
+  if (
+    user.role === 'admin' ||
+    user.role === 'support'
+  ) {
+    return APP_PATHS.dashboard;
+  }
+
+  if (
+    user.role === 'artist' &&
+    user.artistVerificationStatus ===
+      'approved'
+  ) {
+    return APP_PATHS.artistManagement;
+  }
+
+  return APP_PATHS.home;
 }
