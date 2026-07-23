@@ -1,12 +1,12 @@
 import {
   createContext,
+  useEffect,
   useMemo,
   useReducer,
   type ReactNode,
 } from 'react';
 
 import {
-  DEFAULT_DEMO_USER_ID,
   defaultUserSettings,
   mockUsers,
 } from '../features/auth-profile/data/mockUsers';
@@ -28,6 +28,14 @@ import type {
   UserSettings,
 } from '../features/auth-profile/types';
 
+import {
+  clearAuthStorage,
+  loadPersistedAuthData,
+  loadPersistedSession,
+  persistAuthData,
+  persistAuthSession,
+} from '../services/localStorageApi';
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -35,7 +43,10 @@ interface AuthProviderProps {
 type AuthAction =
   | {
       type: 'LOGIN';
-      payload: string;
+      payload: {
+        userId: string;
+        rememberMe: boolean;
+      };
     }
   | {
       type: 'LOGOUT';
@@ -53,11 +64,13 @@ type AuthAction =
     }
   | {
       type: 'UPDATE_CURRENT_USER';
-      payload: Partial<EditableUserFields>;
+      payload:
+        Partial<EditableUserFields>;
     }
   | {
       type: 'UPDATE_SETTINGS';
-      payload: Partial<UserSettings>;
+      payload:
+        Partial<UserSettings>;
     }
   | {
       type: 'RESET_DEMO_STATE';
@@ -68,6 +81,7 @@ function cloneSettings(
 ): UserSettings {
   return {
     ...settings,
+
     notifications: {
       ...settings.notifications,
     },
@@ -75,24 +89,36 @@ function cloneSettings(
 }
 
 function cloneUsers() {
-  return mockUsers.map((user) => ({
-    ...user,
-    subscription: {
-      ...user.subscription,
-    },
-    stats: {
-      ...user.stats,
-    },
-    settings: cloneSettings(
-      user.settings,
-    ),
-    followedUserIds: [
-      ...user.followedUserIds,
-    ],
-    artistPortfolio: user.artistPortfolio
-      ? [...user.artistPortfolio]
-      : undefined,
-  }));
+  return mockUsers.map(
+    (user) => ({
+      ...user,
+
+      subscription: {
+        ...user.subscription,
+      },
+
+      stats: {
+        ...user.stats,
+      },
+
+      settings:
+        cloneSettings(
+          user.settings,
+        ),
+
+      followedUserIds: [
+        ...user.followedUserIds,
+      ],
+
+      artistPortfolio:
+        user.artistPortfolio
+          ? [
+              ...user
+                .artistPortfolio,
+            ]
+          : undefined,
+    }),
+  );
 }
 
 function cloneCredentials() {
@@ -103,13 +129,55 @@ function cloneCredentials() {
   );
 }
 
-const createInitialState =
-  (): AuthState => ({
+function createCleanState():
+  AuthState {
+  return {
     users: cloneUsers(),
-    credentials: cloneCredentials(),
+    credentials:
+      cloneCredentials(),
     currentUserId: null,
+    rememberMe: false,
     isInitialized: true,
-  });
+  };
+}
+
+function createInitialState():
+  AuthState {
+  const defaultUsers =
+    cloneUsers();
+
+  const defaultCredentials =
+    cloneCredentials();
+
+  const persistedData =
+    loadPersistedAuthData(
+      defaultUsers,
+      defaultCredentials,
+    );
+
+  const persistedSession =
+    loadPersistedSession(
+      persistedData.users.map(
+        (user) => user.id,
+      ),
+    );
+
+  return {
+    users:
+      persistedData.users,
+
+    credentials:
+      persistedData.credentials,
+
+    currentUserId:
+      persistedSession.userId,
+
+    rememberMe:
+      persistedSession.rememberMe,
+
+    isInitialized: true,
+  };
+}
 
 function authReducer(
   state: AuthState,
@@ -119,35 +187,50 @@ function authReducer(
     case 'LOGIN':
       return {
         ...state,
-        currentUserId: action.payload,
+
+        currentUserId:
+          action.payload.userId,
+
+        rememberMe:
+          action.payload
+            .rememberMe,
       };
 
     case 'LOGOUT':
       return {
         ...state,
         currentUserId: null,
+        rememberMe: false,
       };
 
     case 'REGISTER_USER':
       return {
         ...state,
+
         users: [
           ...state.users,
           action.payload.user,
         ],
+
         credentials: [
           ...state.credentials,
-          action.payload.credential,
+          action.payload
+            .credential,
         ],
+
         currentUserId:
           action.payload.user.id,
+
+        rememberMe: false,
       };
 
     case 'SELECT_DEMO_USER': {
-      const userExists = state.users.some(
-        (user) =>
-          user.id === action.payload,
-      );
+      const userExists =
+        state.users.some(
+          (user) =>
+            user.id ===
+            action.payload,
+        );
 
       if (!userExists) {
         return state;
@@ -155,57 +238,73 @@ function authReducer(
 
       return {
         ...state,
-        currentUserId: action.payload,
+        currentUserId:
+          action.payload,
+        rememberMe: false,
       };
     }
 
     case 'UPDATE_CURRENT_USER':
       return {
         ...state,
-        users: state.users.map((user) =>
-          user.id === state.currentUserId
-            ? {
-                ...user,
-                ...action.payload,
-              }
-            : user,
-        ),
+
+        users:
+          state.users.map(
+            (user) =>
+              user.id ===
+              state.currentUserId
+                ? {
+                    ...user,
+                    ...action.payload,
+                  }
+                : user,
+          ),
       };
 
     case 'UPDATE_SETTINGS':
       return {
         ...state,
-        users: state.users.map((user) => {
-          if (
-            user.id !==
-            state.currentUserId
-          ) {
-            return user;
-          }
 
-          return {
-            ...user,
-            settings: {
-              ...user.settings,
-              ...action.payload,
-              notifications:
-                action.payload
-                  .notifications
-                  ? {
-                      ...user.settings
-                        .notifications,
-                      ...action.payload
-                        .notifications,
-                    }
-                  : user.settings
-                      .notifications,
+        users:
+          state.users.map(
+            (user) => {
+              if (
+                user.id !==
+                state.currentUserId
+              ) {
+                return user;
+              }
+
+              return {
+                ...user,
+
+                settings: {
+                  ...user.settings,
+                  ...action.payload,
+
+                  notifications:
+                    action.payload
+                      .notifications
+                      ? {
+                          ...user
+                            .settings
+                            .notifications,
+
+                          ...action
+                            .payload
+                            .notifications,
+                        }
+                      : user
+                          .settings
+                          .notifications,
+                },
+              };
             },
-          };
-        }),
+          ),
       };
 
     case 'RESET_DEMO_STATE':
-      return createInitialState();
+      return createCleanState();
 
     default:
       return state;
@@ -215,7 +314,9 @@ function authReducer(
 function normalizeEmail(
   email: string,
 ) {
-  return email.trim().toLowerCase();
+  return email
+    .trim()
+    .toLowerCase();
 }
 
 function createUserId(
@@ -233,21 +334,35 @@ function createUniqueUsername(
   const emailPrefix =
     normalizeEmail(email)
       .split('@')[0]
-      .replace(/[^a-z0-9_]/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_|_$/g, '') ||
+      .replace(
+        /[^a-z0-9_]/g,
+        '_',
+      )
+      .replace(
+        /_+/g,
+        '_',
+      )
+      .replace(
+        /^_|_$/g,
+        '',
+      ) ||
     'avazify_user';
 
-  let username = emailPrefix;
+  let username =
+    emailPrefix;
+
   let counter = 1;
 
   while (
     users.some(
       (user) =>
-        user.username === username,
+        user.username ===
+        username,
     )
   ) {
-    username = `${emailPrefix}_${counter}`;
+    username =
+      `${emailPrefix}_${counter}`;
+
     counter += 1;
   }
 
@@ -267,15 +382,18 @@ function createOperationResult(
 }
 
 export const AuthContext =
-  createContext<AuthContextValue | null>(
-    null,
-  );
+  createContext<
+    AuthContextValue | null
+  >(null);
 
-// Central mock authentication state.
+// Central persistent authentication state.
 export function AuthProvider({
   children,
 }: AuthProviderProps) {
-  const [state, dispatch] = useReducer(
+  const [
+    state,
+    dispatch,
+  ] = useReducer(
     authReducer,
     undefined,
     createInitialState,
@@ -288,21 +406,63 @@ export function AuthProvider({
         state.currentUserId,
     ) ?? null;
 
+  useEffect(() => {
+    if (
+      !state.isInitialized
+    ) {
+      return;
+    }
+
+    persistAuthData(
+      state.users,
+      state.credentials,
+    );
+  }, [
+    state.credentials,
+    state.isInitialized,
+    state.users,
+  ]);
+
+  useEffect(() => {
+    if (
+      !state.isInitialized
+    ) {
+      return;
+    }
+
+    persistAuthSession(
+      state.currentUserId,
+      state.rememberMe,
+    );
+  }, [
+    state.currentUserId,
+    state.isInitialized,
+    state.rememberMe,
+  ]);
+
   const value =
     useMemo<AuthContextValue>(
       () => ({
         users: state.users,
+
         currentUser,
+
         isAuthenticated:
           currentUser !== null,
+
         isInitialized:
           state.isInitialized,
+
+        isRememberedSession:
+          state.rememberMe,
 
         login: (
           input: LoginInput,
         ) => {
           const normalizedEmail =
-            normalizeEmail(input.email);
+            normalizeEmail(
+              input.email,
+            );
 
           const credential =
             state.credentials.find(
@@ -346,7 +506,13 @@ export function AuthProvider({
 
           dispatch({
             type: 'LOGIN',
-            payload: user.id,
+
+            payload: {
+              userId: user.id,
+
+              rememberMe:
+                input.rememberMe,
+            },
           });
 
           return createOperationResult(
@@ -363,10 +529,13 @@ export function AuthProvider({
         },
 
         registerListener: (
-          input: ListenerRegistrationInput,
+          input:
+            ListenerRegistrationInput,
         ) => {
           const normalizedEmail =
-            normalizeEmail(input.email);
+            normalizeEmail(
+              input.email,
+            );
 
           const emailExists =
             state.users.some(
@@ -385,7 +554,9 @@ export function AuthProvider({
           }
 
           const userId =
-            createUserId('listener');
+            createUserId(
+              'listener',
+            );
 
           const username =
             createUniqueUsername(
@@ -395,25 +566,41 @@ export function AuthProvider({
 
           const newUser: User = {
             id: userId,
+
             displayName:
-              input.displayName.trim(),
+              input.displayName
+                .trim(),
+
             username,
-            email: normalizedEmail,
+
+            email:
+              normalizedEmail,
+
             role: 'listener',
+
             subscription: {
               tier: 'free',
               startedAt: null,
               expiresAt: null,
             },
+
             avatar: null,
+
             bio: '',
+
             birthDate:
               input.birthDate,
-            gender: input.gender,
+
+            gender:
+              input.gender,
+
             joinedAt:
-              new Date().toISOString(),
+              new Date()
+                .toISOString(),
+
             artistVerificationStatus:
               'not-applicable',
+
             stats: {
               followers: 0,
               following: 0,
@@ -421,22 +608,29 @@ export function AuthProvider({
               totalStreams: 0,
               playlistCount: 0,
             },
-            settings: cloneSettings(
-              defaultUserSettings,
-            ),
+
+            settings:
+              cloneSettings(
+                defaultUserSettings,
+              ),
+
             followedUserIds: [],
           };
 
-          const credential: MockCredential =
-            {
+          const credential:
+            MockCredential = {
               userId,
-              email: normalizedEmail,
+
+              email:
+                normalizedEmail,
+
               password:
                 input.password,
             };
 
           dispatch({
             type: 'REGISTER_USER',
+
             payload: {
               user: newUser,
               credential,
@@ -451,10 +645,13 @@ export function AuthProvider({
         },
 
         registerArtist: (
-          input: ArtistRegistrationInput,
+          input:
+            ArtistRegistrationInput,
         ) => {
           const normalizedEmail =
-            normalizeEmail(input.email);
+            normalizeEmail(
+              input.email,
+            );
 
           const emailExists =
             state.users.some(
@@ -473,7 +670,9 @@ export function AuthProvider({
           }
 
           const userId =
-            createUserId('artist');
+            createUserId(
+              'artist',
+            );
 
           const username =
             createUniqueUsername(
@@ -482,34 +681,52 @@ export function AuthProvider({
             );
 
           const portfolioItems = [
-            input.portfolioUrl.trim(),
+            input.portfolioUrl
+              .trim(),
+
             ...input
               .portfolioFileNames,
           ].filter(Boolean);
 
           const newUser: User = {
             id: userId,
+
             displayName:
-              input.artistName.trim(),
+              input.artistName
+                .trim(),
+
             username,
-            email: normalizedEmail,
+
+            email:
+              normalizedEmail,
+
             role: 'artist',
+
             subscription: {
               tier: 'free',
               startedAt: null,
               expiresAt: null,
             },
+
             avatar: null,
+
             bio: '',
+
             birthDate: null,
+
             gender:
               'prefer-not-to-say',
+
             joinedAt:
-              new Date().toISOString(),
+              new Date()
+                .toISOString(),
+
             artistPortfolio:
               portfolioItems,
+
             artistVerificationStatus:
               'pending',
+
             stats: {
               followers: 0,
               following: 0,
@@ -517,32 +734,41 @@ export function AuthProvider({
               totalStreams: 0,
               playlistCount: 0,
             },
+
             settings: {
               ...cloneSettings(
                 defaultUserSettings,
               ),
+
               notifications: {
                 ...defaultUserSettings
                   .notifications,
+
                 artistVerification:
                   true,
+
                 financialReports:
                   true,
               },
             },
+
             followedUserIds: [],
           };
 
-          const credential: MockCredential =
-            {
+          const credential:
+            MockCredential = {
               userId,
-              email: normalizedEmail,
+
+              email:
+                normalizedEmail,
+
               password:
                 input.password,
             };
 
           dispatch({
             type: 'REGISTER_USER',
+
             payload: {
               user: newUser,
               credential,
@@ -588,8 +814,11 @@ export function AuthProvider({
           userId: string,
         ) => {
           dispatch({
-            type: 'SELECT_DEMO_USER',
-            payload: userId,
+            type:
+              'SELECT_DEMO_USER',
+
+            payload:
+              userId,
           });
         },
 
@@ -599,7 +828,9 @@ export function AuthProvider({
           dispatch({
             type:
               'UPDATE_CURRENT_USER',
-            payload: changes,
+
+            payload:
+              changes,
           });
         },
 
@@ -607,8 +838,11 @@ export function AuthProvider({
           changes,
         ) => {
           dispatch({
-            type: 'UPDATE_SETTINGS',
-            payload: changes,
+            type:
+              'UPDATE_SETTINGS',
+
+            payload:
+              changes,
           });
         },
 
@@ -630,6 +864,8 @@ export function AuthProvider({
           ),
 
         resetDemoState: () => {
+          clearAuthStorage();
+
           dispatch({
             type:
               'RESET_DEMO_STATE',
@@ -640,6 +876,7 @@ export function AuthProvider({
         currentUser,
         state.credentials,
         state.isInitialized,
+        state.rememberMe,
         state.users,
       ],
     );
@@ -652,7 +889,3 @@ export function AuthProvider({
     </AuthContext.Provider>
   );
 }
-
-export {
-  DEFAULT_DEMO_USER_ID,
-};

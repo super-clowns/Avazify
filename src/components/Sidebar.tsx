@@ -9,7 +9,9 @@ import {
   APP_PATHS,
 } from '../config/paths';
 
-import { useAuth } from '../features/auth-profile/hooks/useAuth';
+import {
+  useAuth,
+} from '../features/auth-profile/hooks/useAuth';
 
 import type {
   UserRole,
@@ -36,8 +38,8 @@ interface RoleNavigationItem
   roles: UserRole[];
 }
 
-const mainNavigation: NavigationItem[] =
-  [
+const mainNavigation:
+  NavigationItem[] = [
     {
       label: 'خانه',
       icon: '⌂',
@@ -51,46 +53,53 @@ const mainNavigation: NavigationItem[] =
     {
       label: 'پلی‌لیست‌ها',
       icon: '▤',
-      to: APP_PATHS.playlists,
+      to:
+        APP_PATHS.playlists,
     },
     {
       label: 'اعلانات',
       icon: '◉',
-      to: APP_PATHS.notifications,
+      to:
+        APP_PATHS.notifications,
     },
     {
       label: 'نمایه کاربر',
       icon: '♙',
-      to: APP_PATHS.profile,
+      to:
+        APP_PATHS.profile,
     },
     {
       label: 'تنظیمات',
       icon: '⚙',
-      to: APP_PATHS.settings,
+      to:
+        APP_PATHS.settings,
     },
   ];
 
-const roleNavigation: RoleNavigationItem[] =
-  [
+const roleNavigation:
+  RoleNavigationItem[] = [
     {
       label: 'مدیریت آثار',
       icon: '⬆',
       to:
-        APP_PATHS.artistManagement,
+        APP_PATHS
+          .artistManagement,
       roles: ['artist'],
     },
     {
       label:
         'داشبورد پشتیبانی',
       icon: '▦',
-      to: APP_PATHS.dashboard,
+      to:
+        APP_PATHS.dashboard,
       roles: ['support'],
     },
     {
       label:
         'داشبورد مدیریت',
       icon: '▦',
-      to: APP_PATHS.dashboard,
+      to:
+        APP_PATHS.dashboard,
       roles: ['admin'],
     },
   ];
@@ -100,10 +109,12 @@ export default function Sidebar({
   isOpen,
   onClose,
 }: SidebarProps) {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const {
     currentUser,
+    isRememberedSession,
     logout,
   } = useAuth();
 
@@ -256,8 +267,8 @@ export default function Sidebar({
             </>
           ) : null}
 
-          {visibleRoleNavigation.length >
-          0 ? (
+          {visibleRoleNavigation
+            .length > 0 ? (
             <>
               <p className="sidebar-section-title sidebar-section-spaced">
                 فضای کاری نقش
@@ -353,10 +364,9 @@ export default function Sidebar({
           </div>
 
           <p>
-            جلسه ورود فقط در حافظه
-            برنامه قرار دارد و با
-            تازه‌سازی صفحه پایان
-            می‌یابد.
+            {isRememberedSession
+              ? 'ورود دائمی فعال است و پس از بستن مرورگر باقی می‌ماند.'
+              : 'نشست موقت فعال است و بعد از پایان نشست مرورگر پاک می‌شود.'}
           </p>
 
           <div className="sidebar-logout">

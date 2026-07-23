@@ -115,6 +115,7 @@ export interface AuthState {
   users: User[];
   credentials: MockCredential[];
   currentUserId: string | null;
+  rememberMe: boolean;
   isInitialized: boolean;
 }
 
@@ -133,6 +134,7 @@ export interface AuthContextValue {
   currentUser: User | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
+  isRememberedSession: boolean;
 
   login: (
     input: LoginInput,
@@ -152,7 +154,9 @@ export interface AuthContextValue {
     email: string,
   ) => AuthOperationResult;
 
-  selectDemoUser: (userId: string) => void;
+  selectDemoUser: (
+    userId: string,
+  ) => void;
 
   updateCurrentUser: (
     changes: Partial<EditableUserFields>,
