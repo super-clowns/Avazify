@@ -114,6 +114,11 @@ export interface AuthOperationResult {
   user?: User;
 }
 
+export interface FollowOperationResult {
+  success: boolean;
+  message: string;
+}
+
 export interface FollowState {
   followerId: string;
   followingId: string;
@@ -136,6 +141,7 @@ export type EditableUserFields = Pick<
   | 'bio'
   | 'birthDate'
   | 'gender'
+  | 'followedUserIds'
 >;
 
 export interface AuthContextValue {

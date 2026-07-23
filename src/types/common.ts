@@ -6,6 +6,7 @@ export type {
   AuthOperationResult,
   AuthState,
   EditableUserFields,
+  FollowOperationResult,
   FollowState,
   ListenerRegistrationInput,
   LoginInput,

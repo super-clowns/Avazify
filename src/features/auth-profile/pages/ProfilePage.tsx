@@ -1,17 +1,17 @@
-import {
-  useState,
-} from 'react';
+import { useState } from 'react';
 
-import {
-  useParams,
-} from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import Button from '../../../components/Button';
 
+import FollowButton from '../components/FollowButton';
 import PhasePlaceholder from '../components/PhasePlaceholder';
 import ProfileEditModal from '../components/ProfileEditModal';
+import SuggestedUsers from '../components/SuggestedUsers';
+import UserConnectionsModal from '../components/UserConnectionsModal';
 
 import { useAuth } from '../hooks/useAuth';
+import { useFollow } from '../hooks/useFollow';
 
 import {
   getAvatarInitial,
@@ -22,10 +22,22 @@ import {
   getSubscriptionLabel,
 } from '../utils/userPresentation';
 
+type ConnectionsTab =
+  | 'followers'
+  | 'following';
+
 function formatDate(
   value: string | null,
 ) {
   if (!value) {
+    return 'ثبت نشده';
+  }
+
+  const date = new Date(value);
+
+  if (
+    Number.isNaN(date.getTime())
+  ) {
     return 'ثبت نشده';
   }
 
@@ -36,10 +48,10 @@ function formatDate(
       month: '2-digit',
       day: '2-digit',
     },
-  ).format(new Date(value));
+  ).format(date);
 }
 
-// User profile and management page.
+// User profile and follow page.
 export default function ProfilePage() {
   const { username } =
     useParams<{
@@ -51,10 +63,27 @@ export default function ProfilePage() {
     setIsEditModalOpen,
   ] = useState(false);
 
+  const [
+    isConnectionsModalOpen,
+    setIsConnectionsModalOpen,
+  ] = useState(false);
+
+  const [
+    connectionsTab,
+    setConnectionsTab,
+  ] = useState<ConnectionsTab>(
+    'followers',
+  );
+
   const {
     currentUser,
     getUserByUsername,
   } = useAuth();
+
+  const {
+    getFollowerCount,
+    getFollowingCount,
+  } = useFollow();
 
   const profileUser =
     username
@@ -84,6 +113,16 @@ export default function ProfilePage() {
     currentUser?.id ===
     profileUser.id;
 
+  const followerCount =
+    getFollowerCount(
+      profileUser.id,
+    );
+
+  const followingCount =
+    getFollowingCount(
+      profileUser.id,
+    );
+
   const playlistLimit =
     getPlaylistLimit(
       profileUser
@@ -101,21 +140,30 @@ export default function ProfilePage() {
   const subscriptionClass =
     `subscription-pill-${profileUser.subscription.tier}`;
 
+  const openConnections = (
+    tab: ConnectionsTab,
+  ) => {
+    setConnectionsTab(tab);
+    setIsConnectionsModalOpen(
+      true,
+    );
+  };
+
   return (
     <>
       <PhasePlaceholder
-        eyebrow="User Module / Profile Management"
+        eyebrow="User Module / Follow System"
         title={
           isOwnProfile
             ? 'نمایه کاربری من'
             : `نمایه ${profileUser.displayName}`
         }
-        description="اطلاعات پروفایل از وضعیت مرکزی خوانده می‌شوند و تغییرات پروفایل در Local Storage ذخیره خواهند شد."
+        description="سیستم دنبال‌کردن کاربران به وضعیت مرکزی متصل است و تمام ارتباطات کاربران پس از Refresh نیز حفظ می‌شوند."
         items={[
-          'ویرایش نام نمایشی، ایمیل، بیوگرافی، تاریخ تولد و جنسیت',
-          'هماهنگی خودکار ایمیل حساب با اطلاعات ورود',
-          'آپلود و حذف عکس پروفایل برای اشتراک‌های مجاز',
-          'ذخیره دائمی تغییرات پس از Refresh مرورگر',
+          'دنبال‌کردن و لغو دنبال‌کردن کاربران',
+          'شمارش پویای دنبال‌کنندگان و دنبال‌شوندگان',
+          'نمایش فهرست کامل ارتباطات هر کاربر',
+          'ذخیره دائمی روابط کاربران در Local Storage',
         ]}
         actions={
           isOwnProfile ? (
@@ -130,12 +178,11 @@ export default function ProfilePage() {
               ویرایش نمایه
             </Button>
           ) : (
-            <Button
-              disabled
-              title="سیستم دنبال‌کردن در فاز بعد پیاده‌سازی می‌شود."
-            >
-              دنبال‌کردن در فاز بعد
-            </Button>
+            <FollowButton
+              userId={
+                profileUser.id
+              }
+            />
           )
         }
       >
@@ -229,29 +276,53 @@ export default function ProfilePage() {
           ) : null}
 
           <div className="profile-stat-grid">
-            <article>
+            <button
+              type="button"
+              className="profile-stat-button"
+              onClick={() =>
+                openConnections(
+                  'followers',
+                )
+              }
+            >
               <span>
                 دنبال‌کننده
               </span>
 
               <strong>
-                {profileUser.stats.followers.toLocaleString(
+                {followerCount.toLocaleString(
                   'fa-IR',
                 )}
               </strong>
-            </article>
 
-            <article>
+              <small>
+                مشاهده فهرست
+              </small>
+            </button>
+
+            <button
+              type="button"
+              className="profile-stat-button"
+              onClick={() =>
+                openConnections(
+                  'following',
+                )
+              }
+            >
               <span>
                 دنبال‌شونده
               </span>
 
               <strong>
-                {profileUser.stats.following.toLocaleString(
+                {followingCount.toLocaleString(
                   'fa-IR',
                 )}
               </strong>
-            </article>
+
+              <small>
+                مشاهده فهرست
+              </small>
+            </button>
 
             <article>
               <span>
@@ -441,9 +512,20 @@ export default function ProfilePage() {
               >
                 مشاهده گزینه‌های ارتقا
               </Button>
-            ) : null}
+            ) : (
+              <FollowButton
+                userId={
+                  profileUser.id
+                }
+                fullWidth
+              />
+            )}
           </section>
         </div>
+
+        {isOwnProfile ? (
+          <SuggestedUsers />
+        ) : null}
       </PhasePlaceholder>
 
       {isOwnProfile ? (
@@ -458,6 +540,23 @@ export default function ProfilePage() {
           }
         />
       ) : null}
+
+      <UserConnectionsModal
+        isOpen={
+          isConnectionsModalOpen
+        }
+        userId={
+          profileUser.id
+        }
+        initialTab={
+          connectionsTab
+        }
+        onClose={() =>
+          setIsConnectionsModalOpen(
+            false,
+          )
+        }
+      />
     </>
   );
 }

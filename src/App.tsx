@@ -16,6 +16,7 @@ import './features/auth-profile/auth-profile.css';
 import './features/auth-profile/auth-flow.css';
 import './features/auth-profile/persistence.css';
 import './features/auth-profile/profile-management.css';
+import './features/auth-profile/follow-system.css';
 
 // Root application providers.
 export default function App() {
