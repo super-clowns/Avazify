@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#34134b"/><stop offset=".52" stop-color="#a34bea"/><stop offset="1" stop-color="#ff72bd"/></linearGradient><radialGradient id="g2"><stop stop-color="#ff72bd"/><stop offset="1" stop-color="#a34bea"/></radialGradient><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 .08 0"/></filter></defs>
+<rect width="600" height="600" rx="44" fill="url(#g)"/><rect width="600" height="600" rx="44" filter="url(#n)" opacity=".3"/><circle cx="300" cy="300" r="210" fill="url(#g2)" opacity=".9"/><circle cx="300" cy="250" r="82" fill="rgba(255,255,255,.25)"/><path d="M150 500c20-110 85-160 150-160s130 50 150 160" fill="rgba(255,255,255,.22)"/>
+<text x="300" y="552" text-anchor="middle" fill="white" opacity=".92" font-family="Tahoma,Arial" font-size="34" font-weight="700">نیلا</text>
+</svg>

@@ -1,66 +1,141 @@
-# Avazify - فاز اول فرانت‌اند
+# Avazify — Full-stack Final Project
 
-آوازیفای یک رابط کاربری کامل و واکنش‌گرا برای سرویس استریم موسیقی است که با React، TypeScript و Vite پیاده‌سازی شده است. داده‌های فاز اول به‌صورت ماک در Local Storage مرورگر ذخیره می‌شوند و تمام نقش‌های شنونده، هنرمند، پشتیبان و مدیر سامانه قابل آزمایش هستند.
+نسخه کامل پروژه استریم موسیقی آوازیفای شامل فرانت‌اند React، بک‌اند Django REST Framework، پایگاه‌داده PostgreSQL، احراز هویت JWT، آپلود فایل، مدیریت اشتراک، تیکت، گزارش مالی، پیشنهاددهنده موسیقی، PWA و Docker است.
 
-## اجرا
+## اجرای سریع با Docker
 
-```bash
-npm install
-npm run dev
-```
-
-برای ساخت نسخه نهایی:
+پیش‌نیاز: Docker Desktop و Docker Compose.
 
 ```bash
-npm run build
-npm run preview
+docker compose up --build
 ```
 
-برای اجرای تست‌ها:
+سپس:
 
-```bash
-npm test
-```
+- برنامه: `http://localhost:8080`
+- Swagger API: `http://localhost:8080/api/docs/`
+- سلامت سرویس: `http://localhost:8080/api/health/`
+- Django Admin: `http://localhost:8080/admin/`
 
-## حساب‌های آزمایشی
+در اجرای نخست، Migrationها انجام و داده‌های نمایشی Seed می‌شوند.
 
-رمز عبور همه حساب‌ها `Demo1234` است.
+## حساب‌های نمایشی
+
+رمز همه حساب‌ها: `Demo1234`
 
 | نقش | ایمیل |
 |---|---|
 | شنونده پایه | `sara@example.com` |
 | شنونده طلایی | `arman@example.com` |
 | هنرمند تأییدشده | `nila.artist@example.com` |
-| هنرمند در انتظار تأیید | `ava.pending@example.com` |
+| هنرمند در انتظار | `ava.pending@example.com` |
 | پشتیبان | `support@example.com` |
-| مدیر سامانه | `admin@example.com` |
+| مدیر | `admin@example.com` |
 
-## بخش‌های پیاده‌سازی‌شده
-
-- ورود، ثبت‌نام شنونده و هنرمند، فراموشی رمز عبور و سیاست حریم خصوصی
-- خانه شخصی‌سازی‌شده بر اساس نقش و سطح اشتراک
-- نمایه کاربر و هنرمند، دنبال‌کردن، ویرایش اطلاعات و محدودیت عکس نمایه
-- تنظیمات اعلان، صدا، زبان، حالت فشرده، اشتراک، بازنشانی و حذف حساب
-- اعلانات نقش‌محور با خواندن، خواندن همه و حذف
-- ساخت، ویرایش و حذف پلی‌لیست با محدودیت‌های اشتراک
-- جستجو، فیلتر و مرتب‌سازی آلبوم‌ها و تک‌آهنگ‌ها
-- پخش‌کننده واقعی صدا با صف پخش، جابه‌جایی زمان، صدا، شافل، تکرار و متن آهنگ
-- محدودیت ۶۰ استریم روزانه برای اشتراک پایه و دانلود برای اشتراک‌های نقره‌ای و طلایی
-- مدیریت آثار برای هنرمندان تأییدشده
-- احراز هویت هنرمندان، تیکت‌ها، حسابرسی مالی، قیمت‌گذاری پویا و گزارش اشتراک‌ها
-- طراحی واکنش‌گرا برای دسکتاپ، تبلت و موبایل
-- PWA با Manifest و Service Worker
-- بیش از ۱۰ تست واحد برای منطق اصلی فاز اول
-
-## ساختار اصلی
+## معماری
 
 ```text
-src/
-  components/   اجزای رابط کاربری قابل استفاده مجدد
-  context/      وضعیت برنامه، پخش‌کننده و پیام‌ها
-  data/         داده‌های ماک اولیه
-  domain/       منطق خالص و قابل تست
-  layout/       پوسته برنامه و پخش‌کننده
-  pages/        صفحات فاز اول
-  styles/       طراحی سراسری واکنش‌گرا
+React + TypeScript + PWA
+        │ REST / JWT / multipart
+        ▼
+Django REST Framework
+        │ ORM
+        ▼
+PostgreSQL
 ```
+
+### ماژول‌های بک‌اند
+
+- `accounts`: کاربر سفارشی، نقش‌ها، JWT، بازیابی رمز، Follow، تنظیمات، تأیید هنرمند
+- `music`: آهنگ، آلبوم، پلی‌لیست، آپلود، Stream Event، Download Event و محدودیت اشتراک
+- `support`: اعلان، تیکت و پیام‌های گفت‌وگو
+- `billing`: اشتراک پویا، تراکنش، درگاه Mock/Zarinpal Sandbox و حسابرسی هنرمندان
+- `recommendations`: پیشنهاددهنده محتوایی غیرتصادفی براساس سابقه شنیدن، ژانر و هنرمندان دنبال‌شده
+- `common`: Bootstrap تجمیع‌شده، Permissionها، Pagination، Validation و Health Check
+
+## قابلیت‌های اصلی
+
+- ثبت‌نام شنونده و هنرمند، ورود JWT، Refresh/Blacklist و بازیابی رمز
+- چهار نقش `listener`، `artist`، `support` و `admin`
+- سه سطح اشتراک پایه، نقره‌ای و طلایی با قیمت پویا
+- محدودیت ۶۰ استریم و ۶ پلی‌لیست برای پایه؛ ۱۰۰ پلی‌لیست برای نقره‌ای
+- آپلود واقعی MP3/WAV/FLAC و تصاویر JPG/PNG/WEBP/SVG
+- Early Access و آمار اختصاصی کاربران طلایی
+- CRUD آثار با کنترل مالکیت هنرمند
+- پلی‌لیست مرتب‌شونده و جلوگیری از آهنگ تکراری
+- سیستم کامل تیکت و اعلان نقش‌محور
+- تأیید یا رد هنرمند همراه با علت و اعلان
+- گزارش ماهانه پاداش هنرمند از داده تجمیع‌شده استریم
+- قیمت‌گذاری اشتراک بدون تغییر کد
+- پرداخت Mock قابل دمو و Zarinpal Sandbox قابل تنظیم
+- پیشنهاددهنده منطقی موسیقی به‌عنوان فعالیت امتیازی
+- PWA و Service Worker
+- Docker برای Frontend، Backend و PostgreSQL
+- OpenAPI/Swagger
+
+## اجرای محلی بدون Docker
+
+### Backend
+
+```bash
+cd backend
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# Linux/macOS
+source .venv/bin/activate
+
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed_demo --reset
+python manage.py runserver
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Vite درخواست‌های `/api` و `/media` را در توسعه به `localhost:8000` Proxy می‌کند.
+
+## تست و کنترل کیفیت
+
+```bash
+# Backend: 33 تست API و منطق
+cd backend
+python manage.py test
+
+# Frontend
+cd frontend
+npm run check
+```
+
+با Docker:
+
+```bash
+make test-backend
+make test-frontend
+```
+
+## دستورات مدیریتی
+
+```bash
+python manage.py seed_demo --reset
+python manage.py expire_subscriptions
+python manage.py generate_monthly_reports --year 2026 --month 7
+```
+
+## مستندات
+
+- [نمودار ER و مدل‌ها](docs/ER_DIAGRAM.md)
+- [قرارداد API](docs/API_CONTRACT.md)
+- [تطبیق با چک‌لیست پروژه](docs/IMPLEMENTATION_CHECKLIST.md)
+- [راهنمای ارائه بک‌اند](docs/PRESENTATION_BACKEND_FA.md)
+- [امنیت، محدودیت‌ها و مسیر Production](docs/SECURITY_AND_LIMITATIONS.md)
+
+## نکات Production
+
+فایل `.env` موجود برای اجرای Demo است. در استقرار واقعی `DJANGO_SECRET_KEY`، دامنه‌ها، HTTPS، سرویس ایمیل، Storage رسانه و اطلاعات درگاه باید با مقادیر امن جایگزین شوند و `DJANGO_DEBUG=0` باشد.
