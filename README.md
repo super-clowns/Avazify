@@ -104,7 +104,7 @@ Vite درخواست‌های `/api` و `/media` را در توسعه به `local
 ## تست و کنترل کیفیت
 
 ```bash
-# Backend: 33 تست API و منطق
+# Backend: 35 تست API و منطق
 cd backend
 python manage.py test
 
@@ -119,6 +119,16 @@ npm run check
 make test-backend
 make test-frontend
 ```
+
+### اعتبارسنجی Swagger / OpenAPI
+
+برای بررسی اینکه مستندات API با Serializerها و Viewها قابل تولید است:
+
+```bash
+docker compose run --rm backend sh -c "python manage.py spectacular --file /tmp/avazify-schema.yaml --validate"
+```
+
+در Swagger، endpointهایی که Request Body دارند فیلدهای واقعی Serializer را نمایش می‌دهند. Endpointهایی مثل Health، Download، Follow و Mark-as-read ذاتاً Body ندارند و نبودن Request Body برای آن‌ها صحیح است.
 
 ## دستورات مدیریتی
 
@@ -135,7 +145,13 @@ python manage.py generate_monthly_reports --year 2026 --month 7
 - [تطبیق با چک‌لیست پروژه](docs/IMPLEMENTATION_CHECKLIST.md)
 - [راهنمای ارائه بک‌اند](docs/PRESENTATION_BACKEND_FA.md)
 - [امنیت، محدودیت‌ها و مسیر Production](docs/SECURITY_AND_LIMITATIONS.md)
+- [Swagger / OpenAPI](docs/SWAGGER_OPENAPI.md)
 
 ## نکات Production
 
 فایل `.env` موجود برای اجرای Demo است. در استقرار واقعی `DJANGO_SECRET_KEY`، دامنه‌ها، HTTPS، سرویس ایمیل، Storage رسانه و اطلاعات درگاه باید با مقادیر امن جایگزین شوند و `DJANGO_DEBUG=0` باشد.
+
+
+## Payment demo
+
+The default `PAYMENT_PROVIDER=mock` now demonstrates the full browser redirect flow: creating a pending transaction, opening a local mock payment page, callback verification, subscription activation, and a final result page. This is the recommended presentation mode because it requires no real money and no external gateway availability. See `docs/PAYMENT_FLOW.md`.

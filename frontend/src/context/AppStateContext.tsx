@@ -310,9 +310,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     duration: 1 | 3 | 6 | 12 = 1,
   ): Promise<AuthResult> => {
     try {
-      const response = await apiRequest<{ success: boolean; message: string }>('/billing/payments/create/', {
+      const response = await apiRequest<{
+        success: boolean;
+        message: string;
+        paymentUrl?: string;
+        status?: string;
+        transaction?: { status: string };
+      }>('/billing/payments/create/', {
         method: 'POST', body: { tier, duration },
       });
+
+      if (response.paymentUrl && response.transaction?.status === 'pending') {
+        window.location.assign(response.paymentUrl);
+        return { success: true, message: 'در حال انتقال به صفحه پرداخت...' };
+      }
+
       await refreshData();
       return { success: response.success, message: response.message };
     } catch (error) {

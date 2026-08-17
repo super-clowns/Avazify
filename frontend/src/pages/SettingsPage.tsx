@@ -138,7 +138,7 @@ export default function SettingsPage() {
         </aside>
       </div>
 
-      <Modal open={subscriptionOpen} title="انتخاب اشتراک" description="پرداخت از طریق لایه درگاه بک‌اند انجام می‌شود؛ محیط توسعه از درگاه Mock استفاده می‌کند." onClose={() => setSubscriptionOpen(false)} size="large" footer={<><button type="button" className="button button-ghost" onClick={() => setSubscriptionOpen(false)}>انصراف</button><button type="button" className="button button-primary" onClick={handlePlan}>تأیید و پرداخت</button></>}>
+      <Modal open={subscriptionOpen} title="انتخاب اشتراک" description="پس از ایجاد تراکنش به صفحه پرداخت هدایت می‌شوید؛ حالت Mock یک درگاه نمایشی محلی برای ارائه باز می‌کند." onClose={() => setSubscriptionOpen(false)} size="large" footer={<><button type="button" className="button button-ghost" onClick={() => setSubscriptionOpen(false)}>انصراف</button><button type="button" className="button button-primary" onClick={handlePlan}>تأیید و پرداخت</button></>}>
         <div className="plan-picker-grid">
           {(['free', 'silver', 'gold'] as SubscriptionTier[]).map((tier) => (
             <button type="button" key={tier} className={`plan-option plan-option-${tier} ${selectedPlan === tier ? 'selected' : ''}`} onClick={() => setSelectedPlan(tier)}>

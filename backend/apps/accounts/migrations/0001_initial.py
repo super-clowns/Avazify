@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                 ("gender", models.CharField(choices=[("female", "Female"), ("male", "Male"), ("other", "Other"), ("prefer-not-to-say", "Prefer not to say")], default="prefer-not-to-say", max_length=24)),
                 ("artist_status", models.CharField(choices=[("not-applicable", "Not applicable"), ("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected")], db_index=True, default="not-applicable", max_length=24)),
                 ("imported_total_streams", models.PositiveBigIntegerField(default=0)),
-                ("followed_users", models.ManyToManyField(blank=True, related_name="followers_set", to=settings.AUTH_USER_MODEL)),
+                ("followed_users", models.ManyToManyField(blank=True, related_name="followers_set", symmetrical=False, to=settings.AUTH_USER_MODEL)),
                 ("groups", models.ManyToManyField(blank=True, help_text="The groups this user belongs to. A user will get all permissions granted to each of their groups.", related_name="user_set", related_query_name="user", to="auth.group", verbose_name="groups")),
                 ("user_permissions", models.ManyToManyField(blank=True, help_text="Specific permissions for this user.", related_name="user_set", related_query_name="user", to="auth.permission", verbose_name="user permissions")),
             ],

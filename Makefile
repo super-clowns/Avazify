@@ -1,4 +1,4 @@
-.PHONY: up down build logs test-backend test-frontend check seed migrate
+.PHONY: up down build logs test-backend test-frontend check seed migrate schema-check
 
 up:
 	docker compose up --build
@@ -25,3 +25,7 @@ test-frontend:
 	cd frontend && npm ci && npm run check
 
 check: test-backend test-frontend
+
+
+schema-check:
+	docker compose run --rm backend sh -c "python manage.py spectacular --file /tmp/avazify-schema.yaml --validate"

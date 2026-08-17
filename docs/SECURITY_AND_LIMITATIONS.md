@@ -30,3 +30,8 @@
 - Gateway پیش‌فرض Mock است تا جریان خرید در ارائه بدون وابستگی خارجی اجرا شود.
 - فایل Low Quality اختیاری است و تولید Transcode خودکار نیازمند Worker/FFmpeg است.
 - پیشنهاددهنده Content-based است و برای داده حجیم می‌تواند به Pipeline آفلاین یا مدل ML ارتقا یابد.
+
+
+## Payment demo note
+
+The default payment provider is a local mock gateway. It exercises transaction creation, callback verification, subscription activation, cancellation, and redirect handling, but it does not move real funds. The Zarinpal sandbox adapter depends on an external service, a valid merchant configuration, Internet access, and the provider's current sandbox API behavior.

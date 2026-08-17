@@ -31,3 +31,8 @@ cd frontend
 npm ci
 npm run check
 ```
+
+## Runtime hotfix (v2)
+- Demo seeding is restart-safe: the manually seeded support notification that collided with ticket signals was removed.
+- Seeded ticket messages use `bulk_create` so reseeding does not emit duplicate reply notifications.
+- Model index declarations and the self-follow migration state were aligned with committed migrations to prevent spurious `makemigrations` warnings.

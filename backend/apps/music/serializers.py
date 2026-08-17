@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.db import transaction
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from apps.common.fields import FlexibleImageField
 
@@ -41,19 +42,24 @@ class TrackSerializer(serializers.ModelSerializer):
             "albumTitleInput", "coverFile", "audioFile", "audioLowQuality",
         )
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_cover(self, obj):
         return file_url(obj.cover, self.context.get("request"))
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_audioUrl(self, obj):
         return file_url(obj.audio_file, self.context.get("request"))
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_audioLowQualityUrl(self, obj):
         return file_url(obj.audio_low_quality, self.context.get("request"))
 
+    @extend_schema_field(serializers.IntegerField())
     def get_listeners(self, obj):
         annotated = getattr(obj, "listeners_count", None)
         return obj.imported_listeners + (annotated if annotated is not None else obj.stream_events.values("user_id").distinct().count())
 
+    @extend_schema_field(serializers.IntegerField())
     def get_streams(self, obj):
         annotated = getattr(obj, "streams_count", None)
         return obj.imported_streams + (annotated if annotated is not None else obj.stream_events.count())
@@ -122,9 +128,12 @@ class AlbumSerializer(serializers.ModelSerializer):
         model = Album
         fields = ("id", "title", "artistId", "artistName", "cover", "releaseDate", "genre", "trackIds", "coverFile")
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_cover(self, obj):
         return file_url(obj.cover, self.context.get("request"))
 
+    @extend_schema_field(serializers.ListField(child=serializers.UUIDField()))
+    @extend_schema_field(serializers.ListField(child=serializers.UUIDField()))
     def get_trackIds(self, obj):
         return [str(value) for value in obj.tracks.filter(is_published=True).values_list("id", flat=True)]
 
@@ -142,6 +151,8 @@ class PlaylistSerializer(serializers.ModelSerializer):
         model = Playlist
         fields = ("id", "userId", "name", "description", "trackIds", "createdAt", "updatedAt")
 
+    @extend_schema_field(serializers.ListField(child=serializers.UUIDField()))
+    @extend_schema_field(serializers.ListField(child=serializers.UUIDField()))
     def get_trackIds(self, obj):
         return [str(value) for value in obj.playlist_tracks.order_by("position").values_list("track_id", flat=True)]
 
@@ -152,3 +163,15 @@ class PlaylistAddTrackSerializer(serializers.Serializer):
 
 class PlaylistReorderSerializer(serializers.Serializer):
     trackIds = serializers.ListField(child=serializers.UUIDField(), allow_empty=True)
+
+
+class StreamCreateSerializer(serializers.Serializer):
+    clientSession = serializers.CharField(required=False, allow_blank=True, max_length=80)
+    secondsListened = serializers.IntegerField(required=False, min_value=0, default=0)
+
+
+class StreamResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    streamId = serializers.UUIDField()
+    streams = serializers.IntegerField()
+    listeners = serializers.IntegerField()

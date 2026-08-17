@@ -7,12 +7,14 @@ from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema
 
 from apps.accounts.models import ArtistApplication, User
 from apps.accounts.serializers import ArtistApplicationSerializer, UserSerializer
 from apps.billing.models import MonthlyArtistReport, PaymentTransaction, SubscriptionPlan
 from apps.billing.serializers import MonthlyArtistReportSerializer
 from apps.common.permissions import IsAdminRole
+from apps.common.schema_serializers import BootstrapResponseSerializer, HealthResponseSerializer, SystemMessageResponseSerializer
 from apps.music.models import Album, Playlist
 from apps.music.serializers import AlbumSerializer, PlaylistSerializer, TrackSerializer
 from apps.music.services import accessible_tracks_for
@@ -25,6 +27,12 @@ class HealthAPIView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
 
+    @extend_schema(
+        responses={200: HealthResponseSerializer},
+        summary="سلامت سرویس",
+        description="برای Health Check داکر و بررسی آماده‌بودن API استفاده می‌شود.",
+        tags=["system"],
+    )
     def get(self, request):
         return Response({"status": "ok", "service": "avazify-api", "version": "2.0.0"})
 
@@ -36,6 +44,12 @@ class BootstrapAPIView(APIView):
     values rather than downloading raw rows and calculating reports itself.
     """
 
+    @extend_schema(
+        responses={200: BootstrapResponseSerializer},
+        summary="داده اولیه رابط کاربری",
+        description="داده‌های موردنیاز React را با توجه به نقش و دسترسی کاربر برمی‌گرداند.",
+        tags=["system"],
+    )
     def get(self, request):
         user = request.user
         tracks = (
@@ -136,6 +150,12 @@ class BootstrapAPIView(APIView):
 class DemoResetAPIView(APIView):
     permission_classes = [IsAdminRole]
 
+    @extend_schema(
+        request=None,
+        responses={200: SystemMessageResponseSerializer, 403: SystemMessageResponseSerializer},
+        summary="بازنشانی داده‌های نمایشی",
+        tags=["system"],
+    )
     def post(self, request):
         if not settings.ALLOW_DEMO_RESET:
             return Response(

@@ -26,7 +26,7 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        indexes = [models.Index(fields=["user", "read", "-created_at"])]
+        indexes = [models.Index(fields=["user", "read", "-created_at"], name="support_not_user_read_idx")]
 
 
 class Ticket(models.Model):

@@ -3,19 +3,33 @@ from __future__ import annotations
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema
 
 from apps.accounts.models import User
 
 from .models import Notification, Ticket, TicketMessage
-from .serializers import NotificationSerializer, TicketReplySerializer, TicketSerializer, TicketStatusSerializer
+from .serializers import (
+    NotificationSerializer,
+    ReadAllNotificationsResponseSerializer,
+    TicketReplySerializer,
+    TicketSerializer,
+    TicketStatusSerializer,
+)
 
 
+@extend_schema(tags=["notifications"])
 class NotificationViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     serializer_class = NotificationSerializer
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user)
 
+    @extend_schema(
+        request=None,
+        responses={200: NotificationSerializer},
+        summary="خوانده‌شدن اعلان",
+        tags=["notifications"],
+    )
     @action(detail=True, methods=["post"])
     def read(self, request, pk=None):
         notification = self.get_object()
@@ -23,12 +37,19 @@ class NotificationViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, views
         notification.save(update_fields=["read"])
         return Response(NotificationSerializer(notification).data)
 
+    @extend_schema(
+        request=None,
+        responses={200: ReadAllNotificationsResponseSerializer},
+        summary="خوانده‌کردن همه اعلان‌ها",
+        tags=["notifications"],
+    )
     @action(detail=False, methods=["post"], url_path="read-all")
     def read_all(self, request):
         updated = self.get_queryset().filter(read=False).update(read=True)
         return Response({"success": True, "updated": updated})
 
 
+@extend_schema(tags=["tickets"])
 class TicketViewSet(viewsets.ModelViewSet):
     serializer_class = TicketSerializer
     search_fields = ("subject", "user__display_name", "user__email")
@@ -52,6 +73,12 @@ class TicketViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("تغییر مستقیم تیکت فقط برای پشتیبانی مجاز است.")
         serializer.save()
 
+    @extend_schema(
+        request=TicketReplySerializer,
+        responses={201: TicketSerializer},
+        summary="ارسال پیام در تیکت",
+        tags=["tickets"],
+    )
     @action(detail=True, methods=["post"])
     def reply(self, request, pk=None):
         ticket = self.get_object()
@@ -78,6 +105,12 @@ class TicketViewSet(viewsets.ModelViewSet):
         ticket.refresh_from_db()
         return Response(TicketSerializer(ticket, context={"request": request}).data, status=201)
 
+    @extend_schema(
+        request=TicketStatusSerializer,
+        responses={200: TicketSerializer},
+        summary="تغییر وضعیت تیکت",
+        tags=["tickets"],
+    )
     @action(detail=True, methods=["patch"])
     def status(self, request, pk=None):
         if request.user.role not in {User.Role.SUPPORT, User.Role.ADMIN}:

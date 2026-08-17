@@ -297,14 +297,70 @@ class AvazifyAPITests(APITestCase):
         self.assertEqual(discount, 15)
         self.assertEqual(amount, 1020000)
 
-    def test_mock_payment_activates_selected_duration(self):
+    def test_mock_payment_uses_redirect_flow_and_activates_after_verification(self):
         self.authenticate(self.listener)
-        response = self.client.post(reverse("payment-create"), {"tier": "silver", "duration": 6}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        create_response = self.client.post(
+            reverse("payment-create"),
+            {"tier": "silver", "duration": 6},
+            format="json",
+        )
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("/payment/mock?", create_response.data["paymentUrl"])
+        self.assertEqual(create_response.data["transaction"]["status"], PaymentTransaction.Status.PENDING)
+
+        self.listener.refresh_from_db()
+        self.assertEqual(self.listener.subscription_tier, User.SubscriptionTier.FREE)
+        self.assertIsNone(self.listener.subscription_expires_at)
+
+        authority = create_response.data["transaction"]["authority"]
+        verify_response = self.client.get(
+            reverse("payment-verify"),
+            {"Authority": authority, "Status": "OK"},
+        )
+        self.assertEqual(verify_response.status_code, status.HTTP_200_OK)
         self.listener.refresh_from_db()
         self.assertEqual(self.listener.subscription_tier, User.SubscriptionTier.SILVER)
-        self.assertEqual(response.data["transaction"]["status"], PaymentTransaction.Status.VERIFIED)
+        self.assertEqual(verify_response.data["transaction"]["status"], PaymentTransaction.Status.VERIFIED)
         self.assertIsNotNone(self.listener.subscription_expires_at)
+
+    def test_mock_payment_callback_redirects_to_frontend_result_page(self):
+        self.authenticate(self.listener)
+        create_response = self.client.post(
+            reverse("payment-create"),
+            {"tier": "gold", "duration": 1},
+            format="json",
+        )
+        authority = create_response.data["transaction"]["authority"]
+
+        callback_response = self.client.get(
+            reverse("payment-verify"),
+            {"Authority": authority, "Status": "OK", "redirect": "1"},
+        )
+        self.assertEqual(callback_response.status_code, status.HTTP_302_FOUND)
+        self.assertIn("/payment/result?", callback_response["Location"])
+        self.assertIn("outcome=success", callback_response["Location"])
+
+    def test_cancelled_mock_payment_does_not_activate_subscription(self):
+        self.authenticate(self.listener)
+        create_response = self.client.post(
+            reverse("payment-create"),
+            {"tier": "gold", "duration": 1},
+            format="json",
+        )
+        authority = create_response.data["transaction"]["authority"]
+        transaction_id = create_response.data["transaction"]["id"]
+
+        callback_response = self.client.get(
+            reverse("payment-verify"),
+            {"Authority": authority, "Status": "NOK", "redirect": "1"},
+        )
+        self.assertEqual(callback_response.status_code, status.HTTP_302_FOUND)
+        self.assertIn("outcome=cancelled", callback_response["Location"])
+
+        self.listener.refresh_from_db()
+        transaction_obj = PaymentTransaction.objects.get(pk=transaction_id)
+        self.assertEqual(self.listener.subscription_tier, User.SubscriptionTier.FREE)
+        self.assertEqual(transaction_obj.status, PaymentTransaction.Status.CANCELLED)
 
     def test_report_generation_aggregates_streams_and_unique_listeners(self):
         StreamEvent.objects.create(track=self.track, user=self.listener)

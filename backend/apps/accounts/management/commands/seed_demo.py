@@ -203,7 +203,6 @@ class Command(BaseCommand):
             ("sara@example.com", "محدودیت استریم روزانه", "۲۴ مورد از ۶۰ استریم امروز خود را استفاده کرده‌اید.", "subscription", "/settings", False),
             ("nila.artist@example.com", "گزارش مالی تیرماه", "محاسبات مالی ماه جاری تکمیل شده و آماده بررسی است.", "finance", "/studio", False),
             ("ava.pending@example.com", "درخواست در حال بررسی است", "نمونه‌کارهای شما دریافت شد و نتیجه از همین بخش اعلام می‌شود.", "verification", "/profile", False),
-            ("support@example.com", "تیکت جدید ثبت شد", "کاربر سارا نیک‌پی درباره دانلود آفلاین پرسشی ثبت کرده است.", "support", "/dashboard", False),
             ("admin@example.com", "درخواست احراز هویت جدید", "درخواست هنرمندی آوا ماهان برای بررسی آماده است.", "verification", "/dashboard", False),
         ]
         for email, title, message, kind, link, read in notifications:
@@ -219,9 +218,15 @@ class Command(BaseCommand):
             ticket.status = ticket_status
             ticket.save(update_fields=["status"])
             ticket.messages.all().delete()
-            for author_kind, body in messages:
-                author = users["support@example.com"] if author_kind == "support" else users[email]
-                TicketMessage.objects.create(ticket=ticket, author=author, author_kind=author_kind, body=body)
+            TicketMessage.objects.bulk_create([
+                TicketMessage(
+                    ticket=ticket,
+                    author=users["support@example.com"] if author_kind == "support" else users[email],
+                    author_kind=author_kind,
+                    body=body,
+                )
+                for author_kind, body in messages
+            ])
 
         report_specs = [
             ("nila.artist@example.com", 284300, 1353900, 24296150, "pending"),

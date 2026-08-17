@@ -54,3 +54,8 @@ class TicketReplySerializer(serializers.Serializer):
 
 class TicketStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Ticket.Status.choices)
+
+
+class ReadAllNotificationsResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    updated = serializers.IntegerField()

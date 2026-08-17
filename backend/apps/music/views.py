@@ -8,6 +8,8 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from apps.accounts.models import User
 from apps.billing.models import SubscriptionPlan
@@ -19,11 +21,14 @@ from .serializers import (
     PlaylistAddTrackSerializer,
     PlaylistReorderSerializer,
     PlaylistSerializer,
+    StreamCreateSerializer,
+    StreamResponseSerializer,
     TrackSerializer,
 )
 from .services import accessible_tracks_for, can_stream
 
 
+@extend_schema(tags=["music-tracks"])
 class TrackViewSet(viewsets.ModelViewSet):
     serializer_class = TrackSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -55,17 +60,26 @@ class TrackViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("فقط صاحب اثر یا مدیر می‌تواند آن را حذف کند.")
         instance.delete()
 
+    @extend_schema(
+        request=StreamCreateSerializer,
+        responses={201: StreamResponseSerializer},
+        summary="ثبت استریم آهنگ",
+        description="دسترسی Early Access و محدودیت روزانه اشتراک را بررسی و StreamEvent ایجاد می‌کند.",
+        tags=["music-tracks"],
+    )
     @action(detail=True, methods=["post"])
     def stream(self, request, pk=None):
         track = self.get_object()
+        input_serializer = StreamCreateSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
         allowed, message = can_stream(request.user, track)
         if not allowed:
             return Response({"success": False, "message": message}, status=403)
         event = StreamEvent.objects.create(
             track=track,
             user=request.user,
-            client_session=str(request.data.get("clientSession", ""))[:80],
-            seconds_listened=max(0, int(request.data.get("secondsListened", 0) or 0)),
+            client_session=input_serializer.validated_data.get("clientSession", ""),
+            seconds_listened=input_serializer.validated_data.get("secondsListened", 0),
         )
         return Response({
             "success": True,
@@ -74,6 +88,13 @@ class TrackViewSet(viewsets.ModelViewSet):
             "listeners": track.imported_listeners + track.stream_events.values("user_id").distinct().count(),
         }, status=201)
 
+    @extend_schema(
+        request=None,
+        responses={200: OpenApiResponse(response=OpenApiTypes.BINARY, description="فایل صوتی به‌صورت attachment")},
+        summary="دانلود آهنگ",
+        description="فقط برای اشتراک نقره‌ای و طلایی فعال است.",
+        tags=["music-tracks"],
+    )
     @action(detail=True, methods=["get"])
     def download(self, request, pk=None):
         track = self.get_object()
@@ -84,6 +105,7 @@ class TrackViewSet(viewsets.ModelViewSet):
         return response
 
 
+@extend_schema(tags=["music-albums"])
 class AlbumViewSet(viewsets.ModelViewSet):
     serializer_class = AlbumSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -114,6 +136,7 @@ class AlbumViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
+@extend_schema(tags=["playlists"])
 class PlaylistViewSet(viewsets.ModelViewSet):
     serializer_class = PlaylistSerializer
 
@@ -128,6 +151,12 @@ class PlaylistViewSet(viewsets.ModelViewSet):
             raise ValidationError({"name": "به سقف تعداد پلی‌لیست مجاز رسیده‌اید."})
         serializer.save(user=self.request.user)
 
+    @extend_schema(
+        request=PlaylistAddTrackSerializer,
+        responses={201: PlaylistSerializer},
+        summary="افزودن آهنگ به پلی‌لیست",
+        tags=["playlists"],
+    )
     @action(detail=True, methods=["post"], url_path="tracks")
     def add_track(self, request, pk=None):
         playlist = self.get_object()
@@ -141,6 +170,12 @@ class PlaylistViewSet(viewsets.ModelViewSet):
         playlist.save(update_fields=["updated_at"])
         return Response(PlaylistSerializer(playlist, context={"request": request}).data, status=201)
 
+    @extend_schema(
+        request=None,
+        responses={204: OpenApiResponse(description="آهنگ از پلی‌لیست حذف شد.")},
+        summary="حذف آهنگ از پلی‌لیست",
+        tags=["playlists"],
+    )
     @action(detail=True, methods=["delete"], url_path=r"tracks/(?P<track_id>[^/.]+)")
     def remove_track(self, request, pk=None, track_id=None):
         playlist = self.get_object()
@@ -150,6 +185,12 @@ class PlaylistViewSet(viewsets.ModelViewSet):
         self._normalize_positions(playlist)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(
+        request=PlaylistReorderSerializer,
+        responses={200: PlaylistSerializer},
+        summary="مرتب‌سازی آهنگ‌های پلی‌لیست",
+        tags=["playlists"],
+    )
     @action(detail=True, methods=["put"])
     @transaction.atomic
     def reorder(self, request, pk=None):

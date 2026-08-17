@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from urllib.parse import urlencode
 
 import requests
 from django.conf import settings
@@ -16,9 +17,21 @@ class MockPaymentGateway:
     name = "mock"
 
     def request(self, transaction, callback_url):
-        return GatewayRequestResult(authority=f"mock-{transaction.id}", payment_url=callback_url)
+        authority = f"mock-{transaction.id}"
+        query = urlencode({
+            "authority": authority,
+            "transaction": str(transaction.id),
+            "tier": transaction.plan.tier,
+            "duration": transaction.duration_months,
+            "amount": transaction.amount,
+        })
+        payment_url = f"{settings.FRONTEND_URL.rstrip('/')}/payment/mock?{query}"
+        return GatewayRequestResult(authority=authority, payment_url=payment_url)
 
     def verify(self, transaction, authority):
+        expected = f"mock-{transaction.id}"
+        if authority != expected:
+            raise RuntimeError("شناسه تراکنش آزمایشی معتبر نیست.")
         return f"MOCK-{str(transaction.id).split('-')[0].upper()}"
 
 
@@ -60,7 +73,10 @@ class ZarinpalSandboxGateway:
         return str(data.get("ref_id") or authority)
 
 
-def get_gateway():
-    if settings.PAYMENT_PROVIDER == "zarinpal-sandbox":
+def get_gateway(provider: str | None = None):
+    selected_provider = provider or settings.PAYMENT_PROVIDER
+    if selected_provider == "zarinpal-sandbox":
         return ZarinpalSandboxGateway()
-    return MockPaymentGateway()
+    if selected_provider == "mock":
+        return MockPaymentGateway()
+    raise RuntimeError(f"درگاه پرداخت ناشناخته است: {selected_provider}")

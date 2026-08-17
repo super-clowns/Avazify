@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import HomePage from './pages/HomePage';
 import { AlbumPage, ExplorePage, PlaylistsPage } from './pages/LibraryPages';
 import NotificationsPage from './pages/NotificationsPage';
+import { MockPaymentPage, PaymentResultPage } from './pages/PaymentPages';
 import { ArtistPage, ProfilePage } from './pages/ProfilePages';
 import SettingsPage from './pages/SettingsPage';
 import SupportPage from './pages/SupportPage';
@@ -73,6 +74,8 @@ export default function AppRoutes() {
           <Route path="/album/:albumId" element={<AlbumPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/support" element={<SupportPage />} />
+          <Route path="/payment/mock" element={<MockPaymentPage />} />
+          <Route path="/payment/result" element={<PaymentResultPage />} />
 
           <Route element={<RoleRoute roles={['artist']} />}>
             <Route path="/studio" element={<ArtistStudioPage />} />

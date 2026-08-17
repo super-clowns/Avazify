@@ -12,6 +12,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from apps.common.permissions import IsSupportOrAdmin
 from apps.support.models import Notification
@@ -19,6 +20,8 @@ from apps.support.models import Notification
 from .models import ArtistApplication, User
 from .serializers import (
     ArtistApplicationReviewSerializer,
+    AuthResponseSerializer,
+    FollowResponseSerializer,
     ArtistApplicationSerializer,
     ArtistRegistrationSerializer,
     ListenerRegistrationSerializer,
@@ -26,6 +29,7 @@ from .serializers import (
     LogoutSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    SuccessMessageSerializer,
     UserPreferenceSerializer,
     UserSerializer,
     UserUpdateSerializer,
@@ -48,6 +52,13 @@ class RegistrationResponseMixin:
 class ListenerRegisterAPIView(RegistrationResponseMixin, APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=ListenerRegistrationSerializer,
+        responses={201: AuthResponseSerializer},
+        summary="ثبت‌نام شنونده",
+        description="یک حساب شنونده ایجاد می‌کند و Access/Refresh JWT را برمی‌گرداند.",
+        tags=["auth"],
+    )
     def post(self, request):
         serializer = ListenerRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -58,6 +69,13 @@ class ArtistRegisterAPIView(RegistrationResponseMixin, APIView):
     permission_classes = [permissions.AllowAny]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
+    @extend_schema(
+        request=ArtistRegistrationSerializer,
+        responses={201: AuthResponseSerializer},
+        summary="ثبت‌نام هنرمند",
+        description="حساب هنرمند با وضعیت pending می‌سازد و نمونه‌کارها را دریافت می‌کند.",
+        tags=["auth"],
+    )
     def post(self, request):
         serializer = ArtistRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -75,6 +93,13 @@ class ArtistRegisterAPIView(RegistrationResponseMixin, APIView):
 class LoginAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=LoginSerializer,
+        responses={200: AuthResponseSerializer},
+        summary="ورود کاربر",
+        description="ایمیل و رمز عبور را بررسی کرده و Access/Refresh JWT صادر می‌کند.",
+        tags=["auth"],
+    )
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -89,6 +114,13 @@ class LoginAPIView(APIView):
 
 
 class LogoutAPIView(APIView):
+    @extend_schema(
+        request=LogoutSerializer,
+        responses={200: SuccessMessageSerializer},
+        summary="خروج کاربر",
+        description="Refresh token را blacklist می‌کند.",
+        tags=["auth"],
+    )
     def post(self, request):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -102,6 +134,12 @@ class LogoutAPIView(APIView):
 class PasswordResetRequestAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=PasswordResetRequestSerializer,
+        responses={200: SuccessMessageSerializer},
+        summary="درخواست بازیابی رمز",
+        tags=["auth"],
+    )
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -117,6 +155,12 @@ class PasswordResetRequestAPIView(APIView):
 class PasswordResetConfirmAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=PasswordResetConfirmSerializer,
+        responses={200: SuccessMessageSerializer, 400: SuccessMessageSerializer},
+        summary="تأیید بازیابی رمز",
+        tags=["auth"],
+    )
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -132,25 +176,53 @@ class PasswordResetConfirmAPIView(APIView):
         return Response({"success": True, "message": "رمز عبور با موفقیت تغییر کرد."})
 
 
+@extend_schema(tags=["users"])
 class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.filter(is_active=True).select_related("preferences").prefetch_related("followed_users")
     search_fields = ("display_name", "username", "email")
     ordering_fields = ("display_name", "date_joined")
 
-    @action(detail=False, methods=["get", "patch", "delete"], parser_classes=[MultiPartParser, FormParser, JSONParser])
+    @extend_schema(
+        responses={200: UserSerializer},
+        summary="نمایه کاربر جاری",
+        tags=["users"],
+    )
+    @action(detail=False, methods=["get"], parser_classes=[MultiPartParser, FormParser, JSONParser])
     def me(self, request):
-        if request.method == "GET":
-            return Response(UserSerializer(request.user, context={"request": request}).data)
-        if request.method == "DELETE":
-            request.user.is_active = False
-            request.user.save(update_fields=["is_active"])
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(UserSerializer(request.user, context={"request": request}).data)
+
+    @extend_schema(
+        request=UserUpdateSerializer,
+        responses={200: UserSerializer},
+        summary="ویرایش نمایه کاربر جاری",
+        tags=["users"],
+    )
+    @me.mapping.patch
+    def update_me(self, request):
         serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(UserSerializer(request.user, context={"request": request}).data)
 
+    @extend_schema(
+        request=None,
+        responses={204: OpenApiResponse(description="حساب کاربر غیرفعال شد.")},
+        summary="غیرفعال‌کردن حساب کاربر جاری",
+        tags=["users"],
+    )
+    @me.mapping.delete
+    def delete_me(self, request):
+        request.user.is_active = False
+        request.user.save(update_fields=["is_active"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        request=UserPreferenceSerializer,
+        responses={200: UserPreferenceSerializer},
+        summary="ویرایش تنظیمات کاربر",
+        tags=["users"],
+    )
     @action(detail=False, methods=["patch"], url_path="me/settings")
     def settings(self, request):
         serializer = UserPreferenceSerializer(request.user.preferences, data=request.data, partial=True)
@@ -158,6 +230,12 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         serializer.save()
         return Response(UserPreferenceSerializer(request.user.preferences).data)
 
+    @extend_schema(
+        request=None,
+        responses={200: FollowResponseSerializer},
+        summary="دنبال‌کردن/لغو دنبال‌کردن کاربر",
+        tags=["users"],
+    )
     @action(detail=True, methods=["post"])
     def follow(self, request, pk=None):
         target = self.get_object()
@@ -172,6 +250,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         return Response({"success": True, "following": following})
 
 
+@extend_schema(tags=["artist-applications"])
 class ArtistApplicationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = ArtistApplicationSerializer
     queryset = ArtistApplication.objects.select_related("user", "reviewed_by").prefetch_related("portfolio_items")
@@ -182,6 +261,12 @@ class ArtistApplicationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             return queryset
         return queryset.filter(user=self.request.user)
 
+    @extend_schema(
+        request=ArtistApplicationReviewSerializer,
+        responses={200: ArtistApplicationSerializer},
+        summary="بررسی درخواست هنرمندی",
+        tags=["artist-applications"],
+    )
     @action(detail=True, methods=["post"], permission_classes=[IsSupportOrAdmin])
     @transaction.atomic
     def review(self, request, pk=None):

@@ -109,4 +109,9 @@ StreamEventهای ماه
 
 **فعالیت امتیازی چیست؟** پیشنهاددهنده محتوایی براساس سابقه واقعی، Genre و Follow که Random نیست و Unit Test دارد.
 
-**چند تست دارید؟** ۳۳ تست Backend برای Authentication، Permission، Upload، Subscription، Stream، Playlist، Ticket، Billing، Reports و Recommendation؛ به‌علاوه ۲۱ تست منطق Frontend.
+**چند تست دارید؟** ۳۵ تست Backend برای Authentication، Permission، Upload، Subscription، Stream، Playlist، Ticket، Billing، Reports و Recommendation؛ به‌علاوه ۲۱ تست منطق Frontend.
+
+
+## دموی پرداخت برای ارائه
+
+در حالت پیش‌فرض `PAYMENT_PROVIDER=mock`، خرید اشتراک دیگر بلافاصله موفق نمی‌شود. ابتدا `PaymentTransaction` با وضعیت `pending` ساخته می‌شود، مرورگر به صفحه `/payment/mock` هدایت می‌شود، و با زدن دکمه پرداخت موفق، Callback بک‌اند `/api/billing/payments/verify/` اجرا می‌شود. بک‌اند Authority را Verify می‌کند، اشتراک را فعال می‌کند، Reference ID و زمان Verify را ثبت می‌کند و در نهایت مرورگر را به `/payment/result` برمی‌گرداند. این Flow برای ارائه بهتر است چون چرخه واقعی Redirect → Callback → Verify را بدون پول واقعی نشان می‌دهد.

@@ -50,8 +50,8 @@ class Track(models.Model):
     class Meta:
         ordering = ["-release_date", "title"]
         indexes = [
-            models.Index(fields=["genre", "-release_date"]),
-            models.Index(fields=["artist", "-release_date"]),
+            models.Index(fields=["genre", "-release_date"], name="music_track_genre_rel_idx"),
+            models.Index(fields=["artist", "-release_date"], name="music_track_artist_re_idx"),
         ]
         constraints = [
             models.CheckConstraint(condition=Q(duration_seconds__gte=0), name="track_duration_nonnegative")
@@ -103,8 +103,8 @@ class StreamEvent(models.Model):
     class Meta:
         ordering = ["-listened_at"]
         indexes = [
-            models.Index(fields=["user", "-listened_at"]),
-            models.Index(fields=["track", "-listened_at"]),
+            models.Index(fields=["user", "-listened_at"], name="music_stream_user_list_idx"),
+            models.Index(fields=["track", "-listened_at"], name="music_stream_track_lis_idx"),
         ]
 
 

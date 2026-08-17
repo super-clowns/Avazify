@@ -53,3 +53,50 @@ class MonthlyArtistReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = MonthlyArtistReport
         fields = ("id", "artistId", "artistName", "year", "month", "uniqueListeners", "streams", "reward", "status")
+
+
+class SubscriptionPriceUpdateSerializer(serializers.Serializer):
+    silver = serializers.IntegerField(min_value=1)
+    gold = serializers.IntegerField(min_value=1)
+
+    def validate(self, attrs):
+        if attrs["gold"] <= attrs["silver"]:
+            raise serializers.ValidationError({"gold": "قیمت طلایی باید بیشتر از قیمت نقره‌ای باشد."})
+        return attrs
+
+
+class SubscriptionPriceUpdateResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    silver = serializers.IntegerField()
+    gold = serializers.IntegerField()
+
+
+class PaymentCreateResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    paymentUrl = serializers.CharField(required=False, allow_blank=True)
+    transaction = PaymentTransactionSerializer(required=False)
+    status = serializers.CharField(required=False)
+
+
+class PaymentVerifyResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    transaction = PaymentTransactionSerializer(required=False)
+
+
+class ReportGenerateSerializer(serializers.Serializer):
+    year = serializers.IntegerField(required=False, min_value=2000, max_value=2200)
+    month = serializers.IntegerField(required=False, min_value=1, max_value=12)
+
+
+class SubscriptionCountSerializer(serializers.Serializer):
+    free = serializers.IntegerField()
+    silver = serializers.IntegerField()
+    gold = serializers.IntegerField()
+
+
+class AdminBillingSummarySerializer(serializers.Serializer):
+    subscriptions = SubscriptionCountSerializer()
+    monthlyRevenue = serializers.IntegerField()

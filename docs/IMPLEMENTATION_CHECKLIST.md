@@ -28,7 +28,7 @@
 | تسویه مدیر | انجام شده | Monthly report settle |
 | اتصال درگاه | انجام شده | Mock کامل + Zarinpal Sandbox adapter |
 | ادغام کامل React و Django | انجام شده | `frontend/src/api` و Context API-backed |
-| حداقل ۱۵ تست Backend | انجام شده | ۳۳ تست در `backend/tests/test_api.py` |
+| حداقل ۱۵ تست Backend | انجام شده | ۳۵ تست در `backend/tests/test_api.py` |
 | OpenAPI | انجام شده | drf-spectacular |
 
 ## امتیازی‌ها

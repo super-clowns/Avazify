@@ -5,6 +5,8 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 
 from apps.common.fields import FlexibleImageField
 
@@ -70,31 +72,39 @@ class UserSerializer(serializers.ModelSerializer):
             "followedUserIds", "artistStatus", "portfolio", "settings",
         )
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_subscription(self, obj):
         return obj.effective_subscription_tier
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_avatar(self, obj):
         if not obj.avatar:
             return None
         request = self.context.get("request")
         return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
 
+    @extend_schema_field(serializers.IntegerField())
     def get_followers(self, obj):
         return obj.followers_set.count()
 
+    @extend_schema_field(serializers.IntegerField())
     def get_following(self, obj):
         return obj.followed_users.count()
 
+    @extend_schema_field(serializers.IntegerField())
     def get_dailyStreams(self, obj):
         today = timezone.localdate()
         return obj.stream_events.filter(listened_at__date=today).count()
 
+    @extend_schema_field(serializers.IntegerField())
     def get_totalStreams(self, obj):
         return obj.imported_total_streams + obj.stream_events.count()
 
+    @extend_schema_field(serializers.ListField(child=serializers.UUIDField()))
     def get_followedUserIds(self, obj):
         return [str(value) for value in obj.followed_users.values_list("id", flat=True)]
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_portfolio(self, obj):
         application = getattr(obj, "artist_application", None)
         if not application:
@@ -267,6 +277,7 @@ class ArtistApplicationSerializer(serializers.ModelSerializer):
         model = ArtistApplication
         fields = ("id", "userId", "artistName", "email", "portfolio", "submittedAt", "status", "rejectionReason")
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_portfolio(self, obj):
         request = self.context.get("request")
         values = list(obj.portfolio_urls)
@@ -274,3 +285,21 @@ class ArtistApplicationSerializer(serializers.ModelSerializer):
             url = item.file.url
             values.append(request.build_absolute_uri(url) if request else url)
         return values
+
+
+class AuthResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    access = serializers.CharField()
+    refresh = serializers.CharField()
+    user = UserSerializer()
+
+
+class SuccessMessageSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+
+
+class FollowResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    following = serializers.BooleanField()

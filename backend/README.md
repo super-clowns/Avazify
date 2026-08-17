@@ -11,7 +11,7 @@ python manage.py seed_demo --reset
 python manage.py runserver
 ```
 
-API documentation is available at `/api/docs/` and the test suite contains 33 tests:
+API documentation is available at `/api/docs/` and the test suite contains 35 tests:
 
 ```bash
 python manage.py test
